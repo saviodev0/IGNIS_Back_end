@@ -1,9 +1,9 @@
 // Prisma schema do IGNIS
 
 generator client {
-  provider = "prisma-client"
-  output   = "../generated/prisma"
-   moduleFormat = "cjs"
+  provider     = "prisma-client"
+  output       = "../generated/prisma"
+  moduleFormat = "cjs"
 }
 
 datasource db {
@@ -20,4 +20,23 @@ model User {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  studyCycles StudyCycle[]
+}
+
+model StudyCycle {
+  id Int @id @default(autoincrement())
+
+  durationMinutes Int
+  startedAt       DateTime
+  completedAt     DateTime?
+
+  completed Boolean @default(false)
+
+  ignisEarned Int @default(0)
+
+  userId String
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
 }

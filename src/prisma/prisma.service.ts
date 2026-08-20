@@ -18,6 +18,10 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
     return this.prisma.user;
   }
 
+  get studyCycle(): any {
+    return this.prisma.studyCycle;
+  }
+
   async onModuleInit() {
     await this.prisma.$connect();
   }

@@ -7,6 +7,7 @@ import { IgnisModule } from './ignis/ignis.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
+import { StudyCyclesModule } from './study-cycles/study-cycles.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { AuthModule } from './auth/auth.module';
     PrismaModule,
     UsersModule,
     AuthModule,
+    StudyCyclesModule,
   ],
 
   controllers: [AppController],
