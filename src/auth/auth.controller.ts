@@ -39,4 +39,13 @@ export class AuthController {
   async me(@Req() request: any) {
     return this.authService.getMe(request.user.sub);
   }
+
+  @Post('logout')
+logout(@Res({ passthrough: true }) response: Response) {
+  response.clearCookie('ignis_token');
+
+  return {
+    message: 'Logout realizado com sucesso',
+  };
+}
 }
