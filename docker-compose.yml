@@ -1,0 +1,19 @@
+services:
+  postgres:
+    image: postgres:17
+    container_name: ignis-postgres
+    restart: unless-stopped
+
+    environment:
+      POSTGRES_USER: ignis
+      POSTGRES_PASSWORD: ignis_dev_password
+      POSTGRES_DB: ignis
+
+    ports:
+      - "5432:5432"
+
+    volumes:
+      - ignis_postgres_data:/var/lib/postgresql/data
+
+volumes:
+  ignis_postgres_data:
