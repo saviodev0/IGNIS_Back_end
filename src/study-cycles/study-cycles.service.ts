@@ -1,4 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
@@ -11,6 +15,36 @@ export class StudyCyclesService {
       userId,
       durationMinutes,
       startedAt: new Date(),
+    },
+  });
+}
+
+async complete(cycleId: number, userId: string) {
+  const cycle = await this.prisma.studyCycle.findFirst({
+    where: {
+      id: cycleId,
+      userId,
+    },
+  });
+
+  if (!cycle) {
+    throw new NotFoundException('Ciclo não encontrado');
+  }
+
+  if (cycle.completed) {
+    throw new ConflictException('Este ciclo já foi concluído');
+  }
+
+  const ignisEarned = cycle.durationMinutes;
+
+  return this.prisma.studyCycle.update({
+    where: {
+      id: cycle.id,
+    },
+    data: {
+      completed: true,
+      completedAt: new Date(),
+      ignisEarned,
     },
   });
 }
