@@ -6,12 +6,12 @@ export class StudyCyclesService {
   constructor(private readonly prisma: PrismaService) {}
 
   async start(userId: string, durationMinutes: number) {
-    return this.prisma.studyCycle.create({
-      data: {
-        userId,
-        durationMinutes,
-        startedAt: new Date(),
-      },
-    });
-  }
+  return this.prisma.studyCycle.create({
+    data: {
+      userId,
+      durationMinutes,
+      startedAt: new Date(),
+    },
+  });
+}
 }
