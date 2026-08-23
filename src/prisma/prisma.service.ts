@@ -22,6 +22,10 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
     return this.prisma.studyCycle;
   }
 
+  get $transaction(): PrismaClient['$transaction'] {
+    return this.prisma.$transaction.bind(this.prisma);
+  }
+
   async onModuleInit() {
     await this.prisma.$connect();
   }

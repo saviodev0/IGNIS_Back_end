@@ -37,15 +37,40 @@ async complete(cycleId: number, userId: string) {
 
   const ignisEarned = cycle.durationMinutes;
 
-  return this.prisma.studyCycle.update({
-    where: {
-      id: cycle.id,
-    },
-    data: {
-      completed: true,
-      completedAt: new Date(),
-      ignisEarned,
-    },
+  const result = await this.prisma.$transaction(async (tx) => {
+    const completedCycle = await tx.studyCycle.update({
+      where: {
+        id: cycle.id,
+      },
+      data: {
+        completed: true,
+        completedAt: new Date(),
+        ignisEarned,
+      },
+    });
+
+    const updatedUser = await tx.user.update({
+      where: {
+        id: userId,
+      },
+      data: {
+        ignisPoints: {
+          increment: ignisEarned,
+        },
+      },
+      select: {
+        id: true,
+        name: true,
+        ignisPoints: true,
+      },
+    });
+
+    return {
+      cycle: completedCycle,
+      user: updatedUser,
+    };
   });
+
+  return result;
 }
 }
