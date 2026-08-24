@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Post,
+  Get,
   Req,
   UseGuards,
   Param,
@@ -39,5 +40,21 @@ async complete(
     Number(id),
     request.user.sub,
   );
+
+  
 }
+
+
+@Get('history')
+@UseGuards(AuthGuard)
+async history(@Req() request: any) {
+  return this.studyCyclesService.history(
+    request.user.sub,
+  );
+}
+
+
+
+
+
 }

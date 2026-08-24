@@ -21,6 +21,31 @@ export class StudyCyclesService {
       },
     });
   }
+    
+
+
+
+async history(userId: string) {
+  return this.prisma.studyCycle.findMany({
+    where: {
+      userId,
+      completed: true,
+    },
+    orderBy: {
+      completedAt: 'desc',
+    },
+    select: {
+      id: true,
+      durationMinutes: true,
+      startedAt: true,
+      completedAt: true,
+      ignisEarned: true,
+    },
+  });
+}
+
+
+
 
 
 
