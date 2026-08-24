@@ -50,6 +50,7 @@ model Achievement {
   name        String
   description String
   icon        String
+  type        String
   requirement Int
 
   createdAt DateTime @default(now())
