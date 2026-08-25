@@ -1,4 +1,6 @@
+
 import {
+  ConflictException,
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -14,6 +16,51 @@ export class AuthService {
     private readonly jwtService: JwtService,
   ) {}
 
+  async register(
+    name: string,
+    age: number,
+    email: string,
+    phone: string,
+    password: string,
+  ) {
+    const existingUser = await this.prisma.user.findUnique({
+      where: {
+        email,
+      },
+    });
+
+    if (existingUser) {
+      throw new ConflictException(
+        'Este e-mail já está cadastrado',
+      );
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const user = await this.prisma.user.create({
+      data: {
+        name,
+        age,
+        email,
+        phone,
+        password: hashedPassword,
+      },
+      select: {
+        id: true,
+        name: true,
+        age: true,
+        email: true,
+        phone: true,
+        createdAt: true,
+      },
+    });
+
+    return {
+      message: 'Usuário criado com sucesso',
+      user,
+    };
+  }
+
   async login(email: string, password: string) {
     const user = await this.prisma.user.findUnique({
       where: {
@@ -22,7 +69,9 @@ export class AuthService {
     });
 
     if (!user) {
-      throw new UnauthorizedException('E-mail ou senha inválidos');
+      throw new UnauthorizedException(
+        'E-mail ou senha inválidos',
+      );
     }
 
     const passwordIsValid = await bcrypt.compare(
@@ -31,7 +80,9 @@ export class AuthService {
     );
 
     if (!passwordIsValid) {
-      throw new UnauthorizedException('E-mail ou senha inválidos');
+      throw new UnauthorizedException(
+        'E-mail ou senha inválidos',
+      );
     }
 
     const payload = {
@@ -39,7 +90,8 @@ export class AuthService {
       email: user.email,
     };
 
-    const accessToken = await this.jwtService.signAsync(payload);
+    const accessToken =
+      await this.jwtService.signAsync(payload);
 
     return {
       accessToken,
@@ -70,9 +122,12 @@ export class AuthService {
     });
 
     if (!user) {
-      throw new UnauthorizedException('Usuário não encontrado');
+      throw new UnauthorizedException(
+        'Usuário não encontrado',
+      );
     }
 
     return user;
   }
 }
+

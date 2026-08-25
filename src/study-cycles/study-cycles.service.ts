@@ -45,6 +45,109 @@ async history(userId: string) {
 }
 
 
+    
+async stats(userId: string) {
+  const cycles = await this.prisma.studyCycle.findMany({
+    where: {
+      userId,
+      completed: true,
+    },
+    select: {
+      durationMinutes: true,
+      ignisEarned: true,
+      completedAt: true,
+    },
+  });
+
+  const completedCycles = cycles.length;
+
+  const totalStudyMinutes = cycles.reduce(
+    (total, cycle) => total + cycle.durationMinutes,
+    0,
+  );
+
+  const totalIgnisEarned = cycles.reduce(
+    (total, cycle) => total + cycle.ignisEarned,
+    0,
+  );
+
+  const averageStudyMinutes =
+    completedCycles > 0
+      ? Math.round(totalStudyMinutes / completedCycles)
+      : 0;
+
+
+
+  const now = new Date();
+
+  const startOfToday = new Date(now);
+  startOfToday.setHours(0, 0, 0, 0);
+
+  const endOfToday = new Date(now);
+  endOfToday.setHours(23, 59, 59, 999);
+
+  const todayCycles = cycles.filter((cycle) => {
+    if (!cycle.completedAt) {
+      return false;
+    }
+
+    const completedAt = new Date(cycle.completedAt);
+
+    return (
+      completedAt >= startOfToday &&
+      completedAt <= endOfToday
+    );
+  });
+
+  const todayStudyMinutes = todayCycles.reduce(
+    (total, cycle) => total + cycle.durationMinutes,
+    0,
+  );
+
+ 
+
+  const startOfWeek = new Date(now);
+
+  const dayOfWeek = startOfWeek.getDay();
+
+  const differenceToMonday =
+    dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+
+  startOfWeek.setDate(
+    startOfWeek.getDate() - differenceToMonday,
+  );
+
+  startOfWeek.setHours(0, 0, 0, 0);
+
+  const weekCycles = cycles.filter((cycle) => {
+    if (!cycle.completedAt) {
+      return false;
+    }
+
+    const completedAt = new Date(cycle.completedAt);
+
+    return completedAt >= startOfWeek;
+  });
+
+  const weekStudyMinutes = weekCycles.reduce(
+    (total, cycle) => total + cycle.durationMinutes,
+    0,
+  );
+
+  return {
+    totalStudyMinutes,
+    completedCycles,
+    totalIgnisEarned,
+    averageStudyMinutes,
+    todayStudyMinutes,
+    weekStudyMinutes,
+  };
+}
+
+
+
+
+
 
 
 

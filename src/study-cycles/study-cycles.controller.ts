@@ -54,6 +54,16 @@ async history(@Req() request: any) {
 }
 
 
+@Get('stats')
+@UseGuards(AuthGuard)
+async stats(@Req() request: any) {
+  return this.studyCyclesService.stats(
+    request.user.sub,
+  );
+}
+
+
+
 
 
 

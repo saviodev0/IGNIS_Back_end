@@ -1,3 +1,4 @@
+
 import {
   Body,
   Controller,
@@ -7,6 +8,7 @@ import {
   Res,
   UseGuards,
 } from '@nestjs/common';
+
 import type { Response } from 'express';
 
 import { AuthService } from './auth.service';
@@ -14,7 +16,26 @@ import { AuthGuard } from './guards/auth.guard';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+  ) {}
+
+  @Post('register')
+  async register(
+    @Body('name') name: string,
+    @Body('age') age: number,
+    @Body('email') email: string,
+    @Body('phone') phone: string,
+    @Body('password') password: string,
+  ) {
+    return this.authService.register(
+      name,
+      Number(age),
+      email,
+      phone,
+      password,
+    );
+  }
 
   @Post('login')
   async login(
@@ -22,7 +43,10 @@ export class AuthController {
     @Body('password') password: string,
     @Res({ passthrough: true }) response: Response,
   ) {
-    const result = await this.authService.login(email, password);
+    const result = await this.authService.login(
+      email,
+      password,
+    );
 
     response.cookie('ignis_token', result.accessToken, {
       httpOnly: true,
@@ -37,15 +61,20 @@ export class AuthController {
   @Get('me')
   @UseGuards(AuthGuard)
   async me(@Req() request: any) {
-    return this.authService.getMe(request.user.sub);
+    return this.authService.getMe(
+      request.user.sub,
+    );
   }
 
   @Post('logout')
-logout(@Res({ passthrough: true }) response: Response) {
-  response.clearCookie('ignis_token');
+  logout(
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    response.clearCookie('ignis_token');
 
-  return {
-    message: 'Logout realizado com sucesso',
-  };
+    return {
+      message: 'Logout realizado com sucesso',
+    };
+  }
 }
-}
+
