@@ -46,10 +46,12 @@ async history(userId: string) {
 
 
     
+
 async stats(userId: string) {
   const cycles = await this.prisma.studyCycle.findMany({
     where: {
       userId,
+
       completed: true,
     },
     select: {
@@ -76,7 +78,9 @@ async stats(userId: string) {
       ? Math.round(totalStudyMinutes / completedCycles)
       : 0;
 
-
+  // =========================
+  // ESTUDO DE HOJE
+  // =========================
 
   const now = new Date();
 
@@ -104,7 +108,9 @@ async stats(userId: string) {
     0,
   );
 
- 
+  // =========================
+  // ESTUDO DA SEMANA
+  // =========================
 
   const startOfWeek = new Date(now);
 
@@ -134,6 +140,95 @@ async stats(userId: string) {
     0,
   );
 
+  // =========================
+  // DIAS DE ESTUDO
+  // =========================
+
+  
+
+
+const studyDays: number[] = [
+  ...new Set<number>(
+    cycles
+      .filter((cycle) => cycle.completedAt)
+      .map((cycle) => {
+        const date = new Date(cycle.completedAt!);
+
+        return new Date(
+          date.getFullYear(),
+          date.getMonth(),
+          date.getDate(),
+        ).getTime();
+      }),
+  ),
+].sort((a: number, b: number) => b - a);
+
+
+
+  const oneDay = 1000 * 60 * 60 * 24;
+
+  // =========================
+  // STREAK ATUAL
+  // =========================
+
+  let currentStreak = 0;
+
+  if (studyDays.length > 0) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const todayTime = today.getTime();
+
+    const mostRecentDay = studyDays[0];
+
+    const daysSinceLastStudy = Math.floor(
+      (todayTime - mostRecentDay) / oneDay,
+    );
+
+    if (daysSinceLastStudy <= 1) {
+      currentStreak = 1;
+
+      for (let i = 1; i < studyDays.length; i++) {
+        const difference = Math.round(
+          (studyDays[i - 1] - studyDays[i]) / oneDay,
+        );
+
+        if (difference === 1) {
+          currentStreak++;
+        } else {
+          break;
+        }
+      }
+    }
+  }
+
+  // =========================
+  // MAIOR STREAK
+  // =========================
+
+  let longestStreak = 0;
+
+  if (studyDays.length > 0) {
+    let streak = 1;
+    longestStreak = 1;
+
+    for (let i = 1; i < studyDays.length; i++) {
+      const difference = Math.round(
+        (studyDays[i - 1] - studyDays[i]) / oneDay,
+      );
+
+      if (difference === 1) {
+        streak++;
+      } else {
+        streak = 1;
+      }
+
+      if (streak > longestStreak) {
+        longestStreak = streak;
+      }
+    }
+  }
+
   return {
     totalStudyMinutes,
     completedCycles,
@@ -141,8 +236,13 @@ async stats(userId: string) {
     averageStudyMinutes,
     todayStudyMinutes,
     weekStudyMinutes,
+    currentStreak,
+    longestStreak,
   };
 }
+
+
+
 
 
 
