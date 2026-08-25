@@ -8,6 +8,7 @@ import { PrismaModule } from './prisma/prisma.module';
 import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
 import { StudyCyclesModule } from './study-cycles/study-cycles.module';
+import { AchievementsModule } from './achievements/achievements.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { StudyCyclesModule } from './study-cycles/study-cycles.module';
     UsersModule,
     AuthModule,
     StudyCyclesModule,
+    AchievementsModule,
   ],
 
   controllers: [AppController],

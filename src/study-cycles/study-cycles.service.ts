@@ -47,11 +47,11 @@ async history(userId: string) {
 
     
 
+
 async stats(userId: string) {
   const cycles = await this.prisma.studyCycle.findMany({
     where: {
       userId,
-
       completed: true,
     },
     select: {
@@ -78,9 +78,7 @@ async stats(userId: string) {
       ? Math.round(totalStudyMinutes / completedCycles)
       : 0;
 
-  // =========================
-  // ESTUDO DE HOJE
-  // =========================
+  
 
   const now = new Date();
 
@@ -108,9 +106,7 @@ async stats(userId: string) {
     0,
   );
 
-  // =========================
-  // ESTUDO DA SEMANA
-  // =========================
+  
 
   const startOfWeek = new Date(now);
 
@@ -140,48 +136,39 @@ async stats(userId: string) {
     0,
   );
 
-  // =========================
-  // DIAS DE ESTUDO
-  // =========================
-
   
 
+  const studyDays: number[] = [
+    ...new Set<number>(
+      cycles
+        .filter((cycle) => cycle.completedAt)
+        .map((cycle) => {
+          const date = new Date(cycle.completedAt!);
 
-const studyDays: number[] = [
-  ...new Set<number>(
-    cycles
-      .filter((cycle) => cycle.completedAt)
-      .map((cycle) => {
-        const date = new Date(cycle.completedAt!);
+          return new Date(
+            date.getFullYear(),
+            date.getMonth(),
+            date.getDate(),
+          ).getTime();
+        }),
+    ),
+  ].sort((a: number, b: number) => b - a);
 
-        return new Date(
-          date.getFullYear(),
-          date.getMonth(),
-          date.getDate(),
-        ).getTime();
-      }),
-  ),
-].sort((a: number, b: number) => b - a);
-
-
+  let currentStreak = 0;
+  let longestStreak = 0;
 
   const oneDay = 1000 * 60 * 60 * 24;
 
-  // =========================
-  // STREAK ATUAL
-  // =========================
-
-  let currentStreak = 0;
-
   if (studyDays.length > 0) {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    const todayTime = today.getTime();
+    const todayTime = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate(),
+    ).getTime();
 
     const mostRecentDay = studyDays[0];
 
-    const daysSinceLastStudy = Math.floor(
+    const daysSinceLastStudy = Math.round(
       (todayTime - mostRecentDay) / oneDay,
     );
 
@@ -200,15 +187,7 @@ const studyDays: number[] = [
         }
       }
     }
-  }
 
-  // =========================
-  // MAIOR STREAK
-  // =========================
-
-  let longestStreak = 0;
-
-  if (studyDays.length > 0) {
     let streak = 1;
     longestStreak = 1;
 
@@ -240,6 +219,8 @@ const studyDays: number[] = [
     longestStreak,
   };
 }
+
+
 
 
 

@@ -1,9 +1,17 @@
-import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
+
+import {
+  Injectable,
+  OnModuleDestroy,
+  OnModuleInit,
+} from '@nestjs/common';
+
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '../../generated/prisma/client';
 
 @Injectable()
-export class PrismaService implements OnModuleInit, OnModuleDestroy {
+export class PrismaService
+  implements OnModuleInit, OnModuleDestroy
+{
   private readonly prisma: PrismaClient;
 
   constructor() {
@@ -22,6 +30,14 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
     return this.prisma.studyCycle;
   }
 
+  get achievement(): any {
+    return this.prisma.achievement;
+  }
+
+  get userAchievement(): any {
+    return this.prisma.userAchievement;
+  }
+
   get $transaction(): PrismaClient['$transaction'] {
     return this.prisma.$transaction.bind(this.prisma);
   }
@@ -34,3 +50,4 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
     await this.prisma.$disconnect();
   }
 }
+
