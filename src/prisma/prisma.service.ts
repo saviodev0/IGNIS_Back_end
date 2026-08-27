@@ -38,6 +38,10 @@ export class PrismaService
     return this.prisma.userAchievement;
   }
 
+  get goal(): any {
+  return this.prisma.goal;
+}
+
   get $transaction(): PrismaClient['$transaction'] {
     return this.prisma.$transaction.bind(this.prisma);
   }

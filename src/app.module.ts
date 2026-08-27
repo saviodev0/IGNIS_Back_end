@@ -9,6 +9,7 @@ import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
 import { StudyCyclesModule } from './study-cycles/study-cycles.module';
 import { AchievementsModule } from './achievements/achievements.module';
+import { GoalsModule } from './goals/goals.module';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { AchievementsModule } from './achievements/achievements.module';
     AuthModule,
     StudyCyclesModule,
     AchievementsModule,
+    GoalsModule,
   ],
 
   controllers: [AppController],
