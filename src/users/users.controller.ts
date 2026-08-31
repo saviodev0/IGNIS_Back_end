@@ -12,6 +12,7 @@ import {
 import { CreateUserDto } from './dto/create-user.dto';
 import { UsersService } from './users.service';
 import { AuthGuard } from '../auth/guards/auth.guard';
+import { UpdatePasswordDto } from './dto/update-password.dto';
 
 @Controller('users')
 export class UsersController {
@@ -59,4 +60,17 @@ export class UsersController {
       phone,
     );
   }
+
+  @Patch('me/password')
+@UseGuards(AuthGuard)
+async updatePassword(
+  @Req() request: any,
+  @Body() updatePasswordDto: UpdatePasswordDto,
+) {
+  return this.usersService.updatePassword(
+    request.user.sub,
+    updatePasswordDto.currentPassword,
+    updatePasswordDto.newPassword,
+  );
+}
 }

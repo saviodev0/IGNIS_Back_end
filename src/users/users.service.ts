@@ -60,6 +60,53 @@ export class UsersService {
     return userWithoutPassword;
   }
 
+  async updatePassword(
+  userId: string,
+  currentPassword: string,
+  newPassword: string,
+) {
+  const user = await this.prisma.user.findUnique({
+    where: {
+      id: userId,
+    },
+  });
+
+  if (!user) {
+    throw new NotFoundException(
+      'Usuário não encontrado',
+    );
+  }
+
+  const passwordIsValid = await bcrypt.compare(
+    currentPassword,
+    user.password,
+  );
+
+  if (!passwordIsValid) {
+    throw new ConflictException(
+      'A senha atual está incorreta',
+    );
+  }
+
+  const newPasswordHash = await bcrypt.hash(
+    newPassword,
+    12,
+  );
+
+  await this.prisma.user.update({
+    where: {
+      id: userId,
+    },
+    data: {
+      password: newPasswordHash,
+    },
+  });
+
+  return {
+    message: 'Senha alterada com sucesso',
+  };
+}
+
   
 
   async getMe(userId: string) {
