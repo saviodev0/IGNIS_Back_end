@@ -14,9 +14,12 @@ model User {
   id          String @id @default(uuid())
   name        String
   age         Int
+  isStudent   Boolean
+  whichCourse String
   email       String @unique
   phone       String
   password    String
+
   ignisPoints Int    @default(0)
 
   createdAt DateTime @default(now())
