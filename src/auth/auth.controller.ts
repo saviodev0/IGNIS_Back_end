@@ -25,6 +25,8 @@ export class AuthController {
     @Body('name') name: string,
     @Body('age') age: number,
     @Body('email') email: string,
+    @Body('isStudent') isStudent: boolean,
+    @Body('whichCourse') whichCourse: string,
     @Body('phone') phone: string,
     @Body('password') password: string,
   ) {
@@ -32,6 +34,8 @@ export class AuthController {
       name,
       Number(age),
       email,
+      isStudent,
+      whichCourse,
       phone,
       password,
     );
