@@ -3,17 +3,27 @@ services:
     image: postgres:17
     container_name: ignis-postgres
     restart: unless-stopped
-
     environment:
       POSTGRES_USER: ignis
       POSTGRES_PASSWORD: ignis_dev_password
       POSTGRES_DB: ignis
-
     ports:
       - "5432:5432"
-
     volumes:
       - ignis_postgres_data:/var/lib/postgresql/data
 
+  mongodb:
+    image: mongo:8.0
+    container_name: ignis-mongodb
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ignis
+      MONGO_INITDB_ROOT_PASSWORD: ignis_dev_password
+    ports:
+      - "27017:27017"
+    volumes:
+      - ignis_mongo_data:/data/db
+
 volumes:
   ignis_postgres_data:
+  ignis_mongo_data:
