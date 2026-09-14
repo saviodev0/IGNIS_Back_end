@@ -1,7 +1,15 @@
-import { Body, Controller, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Patch,
+  Post,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
 import { UsersService } from './users.service';
-import { UseGuards, Req, Get } from '@nestjs/common';
 import { AuthGuard } from '../auth/guards/auth.guard';
 
 @Controller('users')
@@ -14,8 +22,14 @@ export class UsersController {
   }
 
   @Get('me/stats')
-@UseGuards(AuthGuard)
-async getStats(@Req() request: any) {
-  return this.usersService.getStats(request.user.sub);
-}
+  @UseGuards(AuthGuard)
+  async getStats(@Req() request: any) {
+    return this.usersService.getStats(request.user.sub);
+  }
+
+  @Patch('me')
+  @UseGuards(AuthGuard)
+  async update(@Req() request: any, @Body() updateUserDto: UpdateUserDto) {
+    return this.usersService.update(request.user.sub, updateUserDto);
+  }
 }

@@ -6,6 +6,8 @@ import {
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateUserDto } from './dto/create-user.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
+
 
 @Injectable()
 export class UsersService {
@@ -38,7 +40,56 @@ export class UsersService {
 
     return userWithoutPassword;
   }
+  async update(userId: string, updateUserDto: UpdateUserDto) {
+  const { name, age, email, phone, password } = updateUserDto;
 
+  // 1. Verifica se o usuário existe
+  const user = await this.prisma.user.findUnique({
+    where: { id: userId },
+  });
+
+  if (!user) {
+    throw new NotFoundException('Usuário não encontrado');
+  }
+
+  // 2. Se for atualizar o e-mail, valida se já não pertence a outra conta
+  if (email && email !== user.email) {
+    const emailExists = await this.prisma.user.findUnique({
+      where: { email },
+    });
+
+    if (emailExists) {
+      throw new ConflictException('E-mail já cadastrado');
+    }
+  }
+
+  // 3. Se enviou nova senha, criptografa
+  let passwordHash: string | undefined;
+  if (password) {
+    passwordHash = await bcrypt.hash(password, 12);
+  }
+
+  // 4. Salva as alterações no banco
+  return this.prisma.user.update({
+    where: { id: userId },
+    data: {
+      ...(name && { name }),
+      ...(age && { age }),
+      ...(email && { email }),
+      ...(phone && { phone }),
+      ...(passwordHash && { password: passwordHash }),
+    },
+    select: {
+      id: true,
+      name: true,
+      age: true,
+      email: true,
+      phone: true,
+      ignisPoints: true,
+      createdAt: true,
+    },
+  });
+}
   async getStats(userId: string) {
   const user = await this.prisma.user.findUnique({
     where: {
