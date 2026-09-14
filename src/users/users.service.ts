@@ -3,7 +3,9 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+
 import * as bcrypt from 'bcrypt';
+
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -11,20 +13,36 @@ import { UpdateUserDto } from './dto/update-user.dto';
 
 @Injectable()
 export class UsersService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+  ) {}
+
+  
 
   async create(createUserDto: CreateUserDto) {
-    const { name, age, email, phone, password } = createUserDto;
+    const {
+      name,
+      age,
+      email,
+      phone,
+      password,
+    } = createUserDto;
 
-    const existingUser = await this.prisma.user.findUnique({
-      where: { email },
-    });
+    const existingUser =
+      await this.prisma.user.findUnique({
+        where: {
+          email,
+        },
+      });
 
     if (existingUser) {
-      throw new ConflictException('E-mail já cadastrado');
+      throw new ConflictException(
+        'E-mail já cadastrado',
+      );
     }
 
-    const passwordHash = await bcrypt.hash(password, 12);
+    const passwordHash =
+      await bcrypt.hash(password, 12);
 
     const user = await this.prisma.user.create({
       data: {
@@ -36,7 +54,10 @@ export class UsersService {
       },
     });
 
-    const { password: _, ...userWithoutPassword } = user;
+    const {
+      password: _,
+      ...userWithoutPassword
+    } = user;
 
     return userWithoutPassword;
   }
@@ -95,125 +116,299 @@ export class UsersService {
     where: {
       id: userId,
     },
-    select: {
-      id: true,
-      name: true,
-      email: true,
-      ignisPoints: true,
-      studyCycles: {
-        where: {
-          completed: true,
-        },
-        select: {
-          durationMinutes: true,
-          completedAt: true,
-        },
-        orderBy: {
-          completedAt: 'asc',
-        },
-      },
-    },
   });
 
   if (!user) {
-    throw new NotFoundException('Usuário não encontrado');
+    throw new NotFoundException(
+      'Usuário não encontrado',
+    );
   }
 
-  const completedCycles = user.studyCycles.length;
-
-  const totalStudyMinutes = user.studyCycles.reduce(
-    (total, cycle) => total + cycle.durationMinutes,
-    0,
+  const passwordIsValid = await bcrypt.compare(
+    currentPassword,
+    user.password,
   );
 
-  const studyDates: number[] = [
-  ...new Set<number>(
-    user.studyCycles
-      .filter((cycle) => cycle.completedAt)
-      .map((cycle) => {
-        const date = new Date(cycle.completedAt!);
-
-        return new Date(
-          date.getFullYear(),
-          date.getMonth(),
-          date.getDate(),
-        ).getTime();
-      }),
-  ),
-].sort((a, b) => a - b);
-
-  let currentStreak = 0;
-  let longestStreak = 0;
-  let streak = 0;
-
-  for (let i = 0; i < studyDates.length; i++) {
-    if (i === 0) {
-      streak = 1;
-    } else {
-      const previousDate = studyDates[i - 1];
-      const currentDate = studyDates[i];
-
-      const differenceInDays =
-        (currentDate - previousDate) / (1000 * 60 * 60 * 24);
-
-      if (differenceInDays === 1) {
-        streak++;
-      } else {
-        streak = 1;
-      }
-    }
-
-    if (streak > longestStreak) {
-      longestStreak = streak;
-    }
+  if (!passwordIsValid) {
+    throw new ConflictException(
+      'A senha atual está incorreta',
+    );
   }
 
-  if (studyDates.length > 0) {
-    const today = new Date();
+  const newPasswordHash = await bcrypt.hash(
+    newPassword,
+    12,
+  );
 
-    const todayStart = new Date(
-      today.getFullYear(),
-      today.getMonth(),
-      today.getDate(),
-    ).getTime();
+  await this.prisma.user.update({
+    where: {
+      id: userId,
+    },
+    data: {
+      password: newPasswordHash,
+    },
+  });
 
-    const yesterdayStart = todayStart - 1000 * 60 * 60 * 24;
+  return {
+    message: 'Senha alterada com sucesso',
+  };
+}
 
-    const lastStudyDate = studyDates[studyDates.length - 1];
+  
 
-    if (
-      lastStudyDate === todayStart ||
-      lastStudyDate === yesterdayStart
+  async getMe(userId: string) {
+    const user =
+      await this.prisma.user.findUnique({
+        where: {
+          id: userId,
+        },
+        select: {
+          id: true,
+          name: true,
+          age: true,
+          email: true,
+          phone: true,
+          ignisPoints: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      });
+
+    if (!user) {
+      throw new NotFoundException(
+        'Usuário não encontrado',
+      );
+    }
+
+    return user;
+  }
+
+  
+
+  async updateMe(
+    userId: string,
+    name?: string,
+    age?: number,
+    phone?: string,
+  ) {
+    const user =
+      await this.prisma.user.findUnique({
+        where: {
+          id: userId,
+        },
+      });
+
+    if (!user) {
+      throw new NotFoundException(
+        'Usuário não encontrado',
+      );
+    }
+
+    const updatedUser =
+      await this.prisma.user.update({
+        where: {
+          id: userId,
+        },
+        data: {
+          ...(name !== undefined && {
+            name,
+          }),
+
+          ...(age !== undefined && {
+            age,
+          }),
+
+          ...(phone !== undefined && {
+            phone,
+          }),
+        },
+        select: {
+          id: true,
+          name: true,
+          age: true,
+          email: true,
+          phone: true,
+          ignisPoints: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      });
+
+    return {
+      message:
+        'Perfil atualizado com sucesso',
+
+      user: updatedUser,
+    };
+  }
+
+  
+
+  async getStats(userId: string) {
+    const user =
+      await this.prisma.user.findUnique({
+        where: {
+          id: userId,
+        },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          ignisPoints: true,
+
+          studyCycles: {
+            where: {
+              completed: true,
+            },
+
+            select: {
+              durationMinutes: true,
+              completedAt: true,
+            },
+
+            orderBy: {
+              completedAt: 'asc',
+            },
+          },
+        },
+      });
+
+    if (!user) {
+      throw new NotFoundException(
+        'Usuário não encontrado',
+      );
+    }
+
+    const completedCycles =
+      user.studyCycles.length;
+
+    const totalStudyMinutes =
+      user.studyCycles.reduce(
+        (total, cycle) =>
+          total + cycle.durationMinutes,
+        0,
+      );
+
+    
+
+    const studyDates: number[] = [
+      ...new Set<number>(
+        user.studyCycles
+          .filter(
+            (cycle) => cycle.completedAt,
+          )
+          .map((cycle) => {
+            const date = new Date(
+              cycle.completedAt!,
+            );
+
+            return new Date(
+              date.getFullYear(),
+              date.getMonth(),
+              date.getDate(),
+            ).getTime();
+          }),
+      ),
+    ].sort((a, b) => a - b);
+
+    
+
+    let currentStreak = 0;
+    let longestStreak = 0;
+    let streak = 0;
+
+    for (
+      let i = 0;
+      i < studyDates.length;
+      i++
     ) {
-      currentStreak = 1;
+      if (i === 0) {
+        streak = 1;
+      } else {
+        const previousDate =
+          studyDates[i - 1];
 
-      for (let i = studyDates.length - 1; i > 0; i--) {
+        const currentDate =
+          studyDates[i];
+
         const differenceInDays =
-          (studyDates[i] - studyDates[i - 1]) /
+          (currentDate - previousDate) /
           (1000 * 60 * 60 * 24);
 
         if (differenceInDays === 1) {
-          currentStreak++;
+          streak++;
         } else {
-          break;
+          streak = 1;
+        }
+      }
+
+      if (streak > longestStreak) {
+        longestStreak = streak;
+      }
+    }
+
+    
+
+    if (studyDates.length > 0) {
+      const today = new Date();
+
+      const todayStart = new Date(
+        today.getFullYear(),
+        today.getMonth(),
+        today.getDate(),
+      ).getTime();
+
+      const yesterdayStart =
+        todayStart -
+        1000 * 60 * 60 * 24;
+
+      const lastStudyDate =
+        studyDates[
+          studyDates.length - 1
+        ];
+
+      if (
+        lastStudyDate === todayStart ||
+        lastStudyDate === yesterdayStart
+      ) {
+        currentStreak = 1;
+
+        for (
+          let i =
+            studyDates.length - 1;
+          i > 0;
+          i--
+        ) {
+          const differenceInDays =
+            (studyDates[i] -
+              studyDates[i - 1]) /
+            (1000 * 60 * 60 * 24);
+
+          if (differenceInDays === 1) {
+            currentStreak++;
+          } else {
+            break;
+          }
         }
       }
     }
-  }
 
-  return {
-    user: {
-      id: user.id,
-      name: user.name,
-      email: user.email,
-    },
-    stats: {
-      ignisPoints: user.ignisPoints,
-      totalStudyMinutes,
-      completedCycles,
-      currentStreak,
-      longestStreak,
-    },
-  };
-}
+    
+
+    return {
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+      },
+
+      stats: {
+        ignisPoints: user.ignisPoints,
+        totalStudyMinutes,
+        completedCycles,
+        currentStreak,
+        longestStreak,
+      },
+    };
+  }
 }
