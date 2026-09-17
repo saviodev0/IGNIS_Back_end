@@ -10,14 +10,15 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 
-
 @Injectable()
 export class UsersService {
   constructor(
     private readonly prisma: PrismaService,
   ) {}
 
-  
+  // =========================
+  // CRIAR USUÁRIO
+  // =========================
 
   async create(createUserDto: CreateUserDto) {
     const {
@@ -61,100 +62,110 @@ export class UsersService {
 
     return userWithoutPassword;
   }
-  async update(userId: string, updateUserDto: UpdateUserDto) {
-  const { name, age, email, phone, password } = updateUserDto;
 
-  // 1. Verifica se o usuário existe
-  const user = await this.prisma.user.findUnique({
-    where: { id: userId },
-  });
+  // =========================
+  // ATUALIZAR USUÁRIO
+  // =========================
 
-  if (!user) {
-    throw new NotFoundException('Usuário não encontrado');
-  }
+  async update(
+    userId: string,
+    updateUserDto: UpdateUserDto,
+  ) {
+    const {
+      name,
+      age,
+      email,
+      phone,
+      password,
+    } = updateUserDto;
 
-  // 2. Se for atualizar o e-mail, valida se já não pertence a outra conta
-  if (email && email !== user.email) {
-    const emailExists = await this.prisma.user.findUnique({
-      where: { email },
-    });
+    const user =
+      await this.prisma.user.findUnique({
+        where: {
+          id: userId,
+        },
+      });
 
-    if (emailExists) {
-      throw new ConflictException('E-mail já cadastrado');
+    if (!user) {
+      throw new NotFoundException(
+        'Usuário não encontrado',
+      );
     }
+
+    // Verifica se o novo e-mail já pertence
+    // a outro usuário
+    if (email && email !== user.email) {
+      const emailExists =
+        await this.prisma.user.findUnique({
+          where: {
+            email,
+          },
+        });
+
+      if (emailExists) {
+        throw new ConflictException(
+          'E-mail já cadastrado',
+        );
+      }
+    }
+
+    // Criptografa a nova senha
+    let passwordHash: string | undefined;
+
+    if (password) {
+      passwordHash =
+        await bcrypt.hash(password, 12);
+    }
+
+    const updatedUser =
+      await this.prisma.user.update({
+        where: {
+          id: userId,
+        },
+
+        data: {
+          ...(name !== undefined && {
+            name,
+          }),
+
+          ...(age !== undefined && {
+            age,
+          }),
+
+          ...(email !== undefined && {
+            email,
+          }),
+
+          ...(phone !== undefined && {
+            phone,
+          }),
+
+          ...(passwordHash !== undefined && {
+            password: passwordHash,
+          }),
+        },
+
+        select: {
+          id: true,
+          name: true,
+          age: true,
+          email: true,
+          phone: true,
+          ignisPoints: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      });
+
+    return {
+      message: 'Perfil atualizado com sucesso',
+      user: updatedUser,
+    };
   }
 
-  // 3. Se enviou nova senha, criptografa
-  let passwordHash: string | undefined;
-  if (password) {
-    passwordHash = await bcrypt.hash(password, 12);
-  }
-
-  // 4. Salva as alterações no banco
-  return this.prisma.user.update({
-    where: { id: userId },
-    data: {
-      ...(name && { name }),
-      ...(age && { age }),
-      ...(email && { email }),
-      ...(phone && { phone }),
-      ...(passwordHash && { password: passwordHash }),
-    },
-    select: {
-      id: true,
-      name: true,
-      age: true,
-      email: true,
-      phone: true,
-      ignisPoints: true,
-      createdAt: true,
-    },
-  });
-}
-  async getStats(userId: string) {
-  const user = await this.prisma.user.findUnique({
-    where: {
-      id: userId,
-    },
-  });
-
-  if (!user) {
-    throw new NotFoundException(
-      'Usuário não encontrado',
-    );
-  }
-
-  const passwordIsValid = await bcrypt.compare(
-    currentPassword,
-    user.password,
-  );
-
-  if (!passwordIsValid) {
-    throw new ConflictException(
-      'A senha atual está incorreta',
-    );
-  }
-
-  const newPasswordHash = await bcrypt.hash(
-    newPassword,
-    12,
-  );
-
-  await this.prisma.user.update({
-    where: {
-      id: userId,
-    },
-    data: {
-      password: newPasswordHash,
-    },
-  });
-
-  return {
-    message: 'Senha alterada com sucesso',
-  };
-}
-
-  
+  // =========================
+  // BUSCAR MEU PERFIL
+  // =========================
 
   async getMe(userId: string) {
     const user =
@@ -162,6 +173,7 @@ export class UsersService {
         where: {
           id: userId,
         },
+
         select: {
           id: true,
           name: true,
@@ -183,7 +195,9 @@ export class UsersService {
     return user;
   }
 
-  
+  // =========================
+  // ATUALIZAR MEU PERFIL
+  // =========================
 
   async updateMe(
     userId: string,
@@ -209,6 +223,7 @@ export class UsersService {
         where: {
           id: userId,
         },
+
         data: {
           ...(name !== undefined && {
             name,
@@ -222,6 +237,7 @@ export class UsersService {
             phone,
           }),
         },
+
         select: {
           id: true,
           name: true,
@@ -242,7 +258,64 @@ export class UsersService {
     };
   }
 
-  
+  // =========================
+  // ALTERAR SENHA
+  // =========================
+
+  async updatePassword(
+    userId: string,
+    currentPassword: string,
+    newPassword: string,
+  ) {
+    const user =
+      await this.prisma.user.findUnique({
+        where: {
+          id: userId,
+        },
+      });
+
+    if (!user) {
+      throw new NotFoundException(
+        'Usuário não encontrado',
+      );
+    }
+
+    const passwordIsValid =
+      await bcrypt.compare(
+        currentPassword,
+        user.password,
+      );
+
+    if (!passwordIsValid) {
+      throw new ConflictException(
+        'A senha atual está incorreta',
+      );
+    }
+
+    const newPasswordHash =
+      await bcrypt.hash(
+        newPassword,
+        12,
+      );
+
+    await this.prisma.user.update({
+      where: {
+        id: userId,
+      },
+
+      data: {
+        password: newPasswordHash,
+      },
+    });
+
+    return {
+      message: 'Senha alterada com sucesso',
+    };
+  }
+
+  // =========================
+  // ESTATÍSTICAS
+  // =========================
 
   async getStats(userId: string) {
     const user =
@@ -250,6 +323,7 @@ export class UsersService {
         where: {
           id: userId,
         },
+
         select: {
           id: true,
           name: true,
@@ -289,13 +363,16 @@ export class UsersService {
         0,
       );
 
-    
+    // =========================
+    // DIAS DE ESTUDO
+    // =========================
 
     const studyDates: number[] = [
       ...new Set<number>(
         user.studyCycles
           .filter(
-            (cycle) => cycle.completedAt,
+            (cycle) =>
+              cycle.completedAt,
           )
           .map((cycle) => {
             const date = new Date(
@@ -311,7 +388,9 @@ export class UsersService {
       ),
     ].sort((a, b) => a - b);
 
-    
+    // =========================
+    // MAIOR STREAK
+    // =========================
 
     let currentStreak = 0;
     let longestStreak = 0;
@@ -347,16 +426,19 @@ export class UsersService {
       }
     }
 
-    
+    // =========================
+    // STREAK ATUAL
+    // =========================
 
     if (studyDates.length > 0) {
       const today = new Date();
 
-      const todayStart = new Date(
-        today.getFullYear(),
-        today.getMonth(),
-        today.getDate(),
-      ).getTime();
+      const todayStart =
+        new Date(
+          today.getFullYear(),
+          today.getMonth(),
+          today.getDate(),
+        ).getTime();
 
       const yesterdayStart =
         todayStart -
@@ -369,7 +451,8 @@ export class UsersService {
 
       if (
         lastStudyDate === todayStart ||
-        lastStudyDate === yesterdayStart
+        lastStudyDate ===
+          yesterdayStart
       ) {
         currentStreak = 1;
 
@@ -392,8 +475,6 @@ export class UsersService {
         }
       }
     }
-
-    
 
     return {
       user: {
