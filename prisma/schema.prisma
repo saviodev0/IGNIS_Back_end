@@ -45,6 +45,8 @@ model StudyCycle {
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
+
+  @@index([userId, completed, completedAt])
 }
 
 model Achievement {
