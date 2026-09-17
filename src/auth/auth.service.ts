@@ -20,6 +20,8 @@ export class AuthService {
     name: string,
     age: number,
     email: string,
+    isStudent: boolean,
+    whichCourse: string,
     phone: string,
     password: string,
   ) {
