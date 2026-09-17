@@ -4,12 +4,14 @@ import {
   Post,
   Get,
   Req,
+  Query,
   UseGuards,
   Param,
 } from '@nestjs/common';
 
 import { StudyCyclesService } from './study-cycles.service';
 import { AuthGuard } from '../auth/guards/auth.guard';
+import { StudyHistoryQueryDto } from './dto/study-history-query.dto';
 
 @Controller('study-cycles')
 export class StudyCyclesController {
@@ -47,9 +49,13 @@ async complete(
 
 @Get('history')
 @UseGuards(AuthGuard)
-async history(@Req() request: any) {
+async history(
+  @Req() request: any,
+  @Query() query: StudyHistoryQueryDto,
+) {
   return this.studyCyclesService.history(
     request.user.sub,
+    query,
   );
 }
 

@@ -5,7 +5,8 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 
-import { PrismaService } from '../prisma/prisma.service';
+import type { PrismaService } from '../prisma/prisma.service';
+import { StudyHistoryQueryDto } from './dto/study-history-query.dto';
 
 @Injectable()
 export class StudyCyclesService {
@@ -25,23 +26,70 @@ export class StudyCyclesService {
 
 
 
-async history(userId: string) {
-  return this.prisma.studyCycle.findMany({
-    where: {
+  async history(userId: string, query?: StudyHistoryQueryDto) {
+    const page = query?.page ?? 1;
+    const limit = query?.limit ?? 20;
+    const completedAt =
+      query?.startDate || query?.endDate
+        ? {
+            ...(query?.startDate
+              ? { gte: new Date(query.startDate) }
+              : {}),
+            ...(query?.endDate
+              ? { lte: new Date(query.endDate) }
+              : {}),
+          }
+        : undefined;
+
+    const where = {
       userId,
       completed: true,
-    },
-    orderBy: {
-      completedAt: 'desc',
-    },
-    select: {
-      id: true,
-      durationMinutes: true,
-      startedAt: true,
-      completedAt: true,
-      ignisEarned: true,
-    },
-  });
+      ...(completedAt ? { completedAt } : {}),
+    };
+
+    const [cycles, total, aggregate] = await Promise.all([
+      this.prisma.studyCycle.findMany({
+        where,
+        orderBy: [{ completedAt: 'desc' }, { id: 'desc' }],
+        skip: (page - 1) * limit,
+        take: limit,
+        select: {
+          id: true,
+          durationMinutes: true,
+          startedAt: true,
+          completedAt: true,
+          ignisEarned: true,
+        },
+      }),
+      this.prisma.studyCycle.count({ where }),
+      this.prisma.studyCycle.aggregate({
+        where,
+        _sum: {
+          durationMinutes: true,
+          ignisEarned: true,
+        },
+        _avg: {
+          durationMinutes: true,
+        },
+      }),
+    ]);
+
+    return {
+      data: cycles,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+      summary: {
+        totalStudyMinutes: aggregate._sum.durationMinutes ?? 0,
+        totalIgnisEarned: aggregate._sum.ignisEarned ?? 0,
+        averageStudyMinutes: Math.round(
+          aggregate._avg.durationMinutes ?? 0,
+        ),
+      },
+    };
 }
 
 
