@@ -1,4 +1,3 @@
-
 import {
   Injectable,
   BadRequestException,
@@ -12,39 +11,43 @@ export class GoalsService {
     private readonly prisma: PrismaService,
   ) {}
 
-
   async remove(userId: string, goalId: number) {
-  const goal = await this.prisma.goal.findFirst({
-    where: {
-      id: goalId,
-      userId,
-    },
-  });
+    const goal = await this.prisma.goal.findFirst({
+      where: {
+        id: goalId,
+        userId,
+      },
+    });
 
-  if (!goal) {
-    throw new BadRequestException(
-      'Meta não encontrada.',
-    );
+    if (!goal) {
+      throw new BadRequestException(
+        'Meta não encontrada.',
+      );
+    }
+
+    await this.prisma.goal.delete({
+      where: {
+        id: goalId,
+      },
+    });
+
+    return {
+      message: 'Meta excluída com sucesso.',
+    };
   }
-
-  await this.prisma.goal.delete({
-    where: {
-      id: goalId,
-    },
-  });
-
-  return {
-    message: 'Meta excluída com sucesso.',
-  };
-}
-
 
   async create(
     userId: string,
     type: string,
     targetMinutes: number,
   ) {
-    if (!['DAILY', 'WEEKLY', 'MONTHLY'].includes(type)) {
+    const validTypes = [
+      'DAILY',
+      'WEEKLY',
+      'MONTHLY',
+    ];
+
+    if (!validTypes.includes(type)) {
       throw new BadRequestException(
         'Tipo de meta inválido. Use DAILY, WEEKLY ou MONTHLY.',
       );
@@ -56,30 +59,28 @@ export class GoalsService {
       );
     }
 
-    
-const existingGoal = await this.prisma.goal.findFirst({
-  where: {
-    userId,
-    type,
-    completed: false,
-    startDate: {
-      lte: new Date(),
-    },
-    endDate: {
-      gte: new Date(),
-    },
-  },
-});
-
-if (existingGoal) {
-  throw new BadRequestException(
-    `Você já possui uma meta ${type.toLowerCase()} ativa.`,
-  );
-}
-
-
-
     const now = new Date();
+
+    const existingGoal =
+      await this.prisma.goal.findFirst({
+        where: {
+          userId,
+          type,
+          completed: false,
+          startDate: {
+            lte: now,
+          },
+          endDate: {
+            gte: now,
+          },
+        },
+      });
+
+    if (existingGoal) {
+      throw new BadRequestException(
+        `Você já possui uma meta ${type.toLowerCase()} ativa.`,
+      );
+    }
 
     const startDate = new Date(now);
     startDate.setHours(0, 0, 0, 0);
@@ -135,129 +136,97 @@ if (existingGoal) {
     });
 
     return Promise.all(
-      goals.map(async (goal) => {
-        const cycles =
-          await this.prisma.studyCycle.findMany({
-            where: {
-              userId,
-              completed: true,
-              completedAt: {
-                gte: goal.startDate,
-                lte: goal.endDate,
-              },
-            },
-            select: {
-              durationMinutes: true,
-            },
-          });
-
-        const progressMinutes = cycles.reduce(
-          (total, cycle) =>
-            total + cycle.durationMinutes,
-          0,
-        );
-
-        const progressPercent =
-          goal.targetMinutes > 0
-            ? Math.min(
-                Math.round(
-                  (progressMinutes /
-                    goal.targetMinutes) *
-                    100,
-                ),
-                100,
-              )
-            : 0;
-
-        const completed =
-          progressMinutes >=
-          goal.targetMinutes;
-
-        return {
-          id: goal.id,
-          type: goal.type,
-          targetMinutes:
-            goal.targetMinutes,
-          startDate: goal.startDate,
-          endDate: goal.endDate,
-          progressMinutes,
-          progressPercent,
-          completed,
-          createdAt: goal.createdAt,
-        };
-      }),
+      goals.map((goal) =>
+        this.getGoalProgress(
+          userId,
+          goal,
+        ),
+      ),
     );
   }
 
-  
-async findOne(userId: string, goalId: number) {
-  const goal = await this.prisma.goal.findFirst({
-    where: {
-      id: goalId,
-      userId,
-    },
-  });
-
-  if (!goal) {
-    throw new BadRequestException(
-      'Meta não encontrada.',
-    );
-  }
-
-  
-
-  const cycles = await this.prisma.studyCycle.findMany({
-    where: {
-      userId,
-      completed: true,
-      completedAt: {
-        gte: goal.startDate,
-        lte: goal.endDate,
+  async findOne(
+    userId: string,
+    goalId: number,
+  ) {
+    const goal = await this.prisma.goal.findFirst({
+      where: {
+        id: goalId,
+        userId,
       },
+    });
+
+    if (!goal) {
+      throw new BadRequestException(
+        'Meta não encontrada.',
+      );
+    }
+
+    return this.getGoalProgress(
+      userId,
+      goal,
+    );
+  }
+
+  private async getGoalProgress(
+    userId: string,
+    goal: {
+      id: number;
+      type: string;
+      targetMinutes: number;
+      startDate: Date;
+      endDate: Date;
+      completed: boolean;
+      createdAt: Date;
     },
-    select: {
-      durationMinutes: true,
-    },
-  });
+  ) {
+    const cycles =
+      await this.prisma.studyCycle.findMany({
+        where: {
+          userId,
+          completed: true,
+          completedAt: {
+            gte: goal.startDate,
+            lte: goal.endDate,
+          },
+        },
+        select: {
+          durationMinutes: true,
+        },
+      });
 
-  const progressMinutes = cycles.reduce(
-    (total, cycle) =>
-      total + cycle.durationMinutes,
-    0,
-  );
+    const progressMinutes = cycles.reduce(
+      (total, cycle) =>
+        total + cycle.durationMinutes,
+      0,
+    );
 
-  const progressPercent =
-    goal.targetMinutes > 0
-      ? Math.min(
-          Math.round(
-            (progressMinutes / goal.targetMinutes) * 100,
-          ),
-          100,
-        )
-      : 0;
+    const progressPercent =
+      goal.targetMinutes > 0
+        ? Math.min(
+            Math.round(
+              (progressMinutes /
+                goal.targetMinutes) *
+                100,
+            ),
+            100,
+          )
+        : 0;
 
-  const completed =
-    progressMinutes >= goal.targetMinutes;
+    const completed =
+      progressMinutes >=
+      goal.targetMinutes;
 
-
-
-
-
-
-
-  return {
-    id: goal.id,
-    type: goal.type,
-    targetMinutes: goal.targetMinutes,
-    startDate: goal.startDate,
-    endDate: goal.endDate,
-    progressMinutes,
-    progressPercent,
-    completed,
-    createdAt: goal.createdAt,
-  };
+    return {
+      id: goal.id,
+      type: goal.type,
+      targetMinutes: goal.targetMinutes,
+      startDate: goal.startDate,
+      endDate: goal.endDate,
+      progressMinutes,
+      progressPercent,
+      completed,
+      createdAt: goal.createdAt,
+    };
+  }
 }
-
-
-}
-
