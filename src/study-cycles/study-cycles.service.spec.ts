@@ -78,3 +78,50 @@ describe('StudyCyclesService.history', () => {
     }));
   });
 });
+
+describe('StudyCyclesService.stats streaks', () => {
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
+  it('counts the current and longest streak from completed study days', async () => {
+    jest.useFakeTimers().setSystemTime(new Date(2026, 8, 24, 12));
+
+    const findMany = jest.fn().mockResolvedValue([
+      { durationMinutes: 30, ignisEarned: 30, completedAt: new Date(2026, 8, 24, 10) },
+      { durationMinutes: 30, ignisEarned: 30, completedAt: new Date(2026, 8, 23, 10) },
+      { durationMinutes: 30, ignisEarned: 30, completedAt: new Date(2026, 8, 22, 10) },
+      { durationMinutes: 30, ignisEarned: 30, completedAt: new Date(2026, 8, 20, 10) },
+      { durationMinutes: 30, ignisEarned: 30, completedAt: null },
+    ]);
+    const service = new StudyCyclesService({
+      studyCycle: { findMany },
+    } as any);
+
+    await expect(service.stats('user-1')).resolves.toEqual(
+      expect.objectContaining({
+        currentStreak: 3,
+        longestStreak: 3,
+      }),
+    );
+  });
+
+  it('resets the current streak when the last study was more than one day ago', async () => {
+    jest.useFakeTimers().setSystemTime(new Date(2026, 8, 24, 12));
+
+    const findMany = jest.fn().mockResolvedValue([
+      { durationMinutes: 30, ignisEarned: 30, completedAt: new Date(2026, 8, 22, 10) },
+      { durationMinutes: 30, ignisEarned: 30, completedAt: new Date(2026, 8, 21, 10) },
+    ]);
+    const service = new StudyCyclesService({
+      studyCycle: { findMany },
+    } as any);
+
+    await expect(service.stats('user-1')).resolves.toEqual(
+      expect.objectContaining({
+        currentStreak: 0,
+        longestStreak: 2,
+      }),
+    );
+  });
+});
