@@ -407,6 +407,7 @@ async stats(userId: string) {
               data: {
                 ignisPoints: {
                   increment: ignisEarned,
+                  //Incrementando points apos finalizar
                 },
               },
               select: {
