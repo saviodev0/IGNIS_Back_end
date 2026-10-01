@@ -4,6 +4,7 @@ import {
   Get,
   Patch,
   Post,
+  Query,
   Req,
   UseGuards,
 } from '@nestjs/common';
@@ -12,6 +13,7 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { UsersService } from './users.service';
 import { AuthGuard } from '../auth/guards/auth.guard';
 import { UpdatePasswordDto } from './dto/update-password.dto';
+import { RankingQueryDto } from './dto/ranking-query.dto';
 
 @Controller('users')
 export class UsersController {
@@ -32,6 +34,15 @@ export class UsersController {
   @UseGuards(AuthGuard)
   async getStats(@Req() request: any) {
     return this.usersService.getStats(request.user.sub);
+  }
+
+  @Get('ranking')
+  @UseGuards(AuthGuard)
+  async ranking(
+    @Req() request: any,
+    @Query() query: RankingQueryDto,
+  ) {
+    return this.usersService.ranking(request.user.sub, query);
   }
 
   @Patch('me')
