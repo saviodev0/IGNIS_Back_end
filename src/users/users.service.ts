@@ -6,15 +6,72 @@ import {
 
 import * as bcrypt from 'bcrypt';
 
-import { PrismaService } from '../prisma/prisma.service';
+import type { PrismaService } from '../prisma/prisma.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { RankingQueryDto } from './dto/ranking-query.dto';
 
 @Injectable()
 export class UsersService {
   constructor(
     private readonly prisma: PrismaService,
   ) {}
+
+  async ranking(userId: string, query?: RankingQueryDto) {
+    const page = query?.page ?? 1;
+    const limit = query?.limit ?? 20;
+    const skip = (page - 1) * limit;
+
+    const [users, total, currentUser] = await Promise.all([
+      this.prisma.user.findMany({
+        orderBy: [{ ignisPoints: 'desc' }, { id: 'asc' }],
+        skip,
+        take: limit,
+        select: { id: true, name: true, ignisPoints: true },
+      }),
+      this.prisma.user.count(),
+      this.prisma.user.findUnique({
+        where: { id: userId },
+        select: { id: true, ignisPoints: true },
+      }),
+    ]);
+
+    if (!currentUser) {
+      throw new NotFoundException('Usuário não encontrado');
+    }
+
+    const usersAhead = await this.prisma.user.count({
+      where: {
+        OR: [
+          { ignisPoints: { gt: currentUser.ignisPoints } },
+          {
+            ignisPoints: currentUser.ignisPoints,
+            id: { lt: currentUser.id },
+          },
+        ],
+      },
+    });
+
+    return {
+      data: users.map((user: any, index: number) => ({
+        position: skip + index + 1,
+        id: user.id,
+        name: user.name,
+        ignisPoints: user.ignisPoints,
+      })),
+      currentUser: {
+        id: currentUser.id,
+        ignisPoints: currentUser.ignisPoints,
+        position: usersAhead + 1,
+      },
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
 
   // =========================
   // CRIAR USUÁRIO
