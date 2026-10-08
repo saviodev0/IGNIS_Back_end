@@ -32,7 +32,11 @@ export class UsersService {
       this.prisma.user.count(),
       this.prisma.user.findUnique({
         where: { id: userId },
-        select: { id: true, ignisPoints: true },
+        select: {
+          id: true,
+          name: true,
+          ignisPoints: true,
+        },
       }),
     ]);
 
@@ -61,6 +65,7 @@ export class UsersService {
       })),
       currentUser: {
         id: currentUser.id,
+        name: currentUser.name,
         ignisPoints: currentUser.ignisPoints,
         position: usersAhead + 1,
       },
