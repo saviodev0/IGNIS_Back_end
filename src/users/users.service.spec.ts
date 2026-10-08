@@ -12,6 +12,7 @@ describe('UsersService.ranking', () => {
       .mockResolvedValueOnce(1);
     const findUnique = jest.fn().mockResolvedValue({
       id: 'user-1',
+      name: 'Bruno',
       ignisPoints: 250,
     });
 
@@ -28,6 +29,7 @@ describe('UsersService.ranking', () => {
       ],
       currentUser: {
         id: 'user-1',
+        name: 'Bruno',
         ignisPoints: 250,
         position: 2,
       },
@@ -47,7 +49,7 @@ describe('UsersService.ranking', () => {
     });
     expect(findUnique).toHaveBeenCalledWith({
       where: { id: 'user-1' },
-      select: { id: true, ignisPoints: true },
+      select: { id: true, name: true, ignisPoints: true },
     });
   });
 });
