@@ -135,12 +135,36 @@ export class GoalsService {
       },
     });
 
+    if (goals.length === 0) {
+      return [];
+    }
+
+    const cycles = await this.prisma.studyCycle.findMany({
+      where: {
+        userId,
+        completed: true,
+        completedAt: {
+          gte: goals.reduce(
+            (earliest, goal) =>
+              goal.startDate < earliest ? goal.startDate : earliest,
+            goals[0].startDate,
+          ),
+          lte: goals.reduce(
+            (latest, goal) =>
+              goal.endDate > latest ? goal.endDate : latest,
+            goals[0].endDate,
+          ),
+        },
+      },
+      select: {
+        durationMinutes: true,
+        completedAt: true,
+      },
+    });
+
     return Promise.all(
       goals.map((goal) =>
-        this.getGoalProgress(
-          userId,
-          goal,
-        ),
+        this.getGoalProgress(userId, goal, cycles),
       ),
     );
   }
@@ -179,9 +203,14 @@ export class GoalsService {
       completed: boolean;
       createdAt: Date;
     },
+    availableCycles?: Array<{
+      durationMinutes: number;
+      completedAt: Date | null;
+    }>,
   ) {
     const cycles =
-      await this.prisma.studyCycle.findMany({
+      availableCycles ??
+      (await this.prisma.studyCycle.findMany({
         where: {
           userId,
           completed: true,
@@ -192,12 +221,22 @@ export class GoalsService {
         },
         select: {
           durationMinutes: true,
+          completedAt: true,
         },
-      });
+      }));
 
     const progressMinutes = cycles.reduce(
-      (total, cycle) =>
-        total + cycle.durationMinutes,
+      (total, cycle) => {
+        if (
+          !cycle.completedAt ||
+          cycle.completedAt < goal.startDate ||
+          cycle.completedAt > goal.endDate
+        ) {
+          return total;
+        }
+
+        return total + cycle.durationMinutes;
+      },
       0,
     );
 

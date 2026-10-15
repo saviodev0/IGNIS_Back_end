@@ -10,6 +10,10 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { RankingQueryDto } from './dto/ranking-query.dto';
+import {
+  calculateStudyStreaks,
+  getLocalDateKey,
+} from '../study-cycles/study-day.utils';
 
 @Injectable()
 export class UsersService {
@@ -425,118 +429,52 @@ export class UsersService {
         0,
       );
 
-    // =========================
-    // DIAS DE ESTUDO
-    // =========================
+    const now = new Date();
+    const todayKey = getLocalDateKey(now);
+    const dailyTotals = new Map<
+      string,
+      { totalMinutes: number; completedCycles: number }
+    >();
 
-    const studyDates: number[] = [
-      ...new Set<number>(
-        user.studyCycles
-          .filter(
-            (cycle) =>
-              cycle.completedAt,
-          )
-          .map((cycle) => {
-            const date = new Date(
-              cycle.completedAt!,
-            );
-
-            return new Date(
-              date.getFullYear(),
-              date.getMonth(),
-              date.getDate(),
-            ).getTime();
-          }),
-      ),
-    ].sort((a, b) => a - b);
-
-    // =========================
-    // MAIOR STREAK
-    // =========================
-
-    let currentStreak = 0;
-    let longestStreak = 0;
-    let streak = 0;
-
-    for (
-      let i = 0;
-      i < studyDates.length;
-      i++
-    ) {
-      if (i === 0) {
-        streak = 1;
-      } else {
-        const previousDate =
-          studyDates[i - 1];
-
-        const currentDate =
-          studyDates[i];
-
-        const differenceInDays =
-          (currentDate - previousDate) /
-          (1000 * 60 * 60 * 24);
-
-        if (differenceInDays === 1) {
-          streak++;
-        } else {
-          streak = 1;
-        }
+    for (const cycle of user.studyCycles) {
+      if (!cycle.completedAt) {
+        continue;
       }
 
-      if (streak > longestStreak) {
-        longestStreak = streak;
-      }
+      const date = getLocalDateKey(cycle.completedAt);
+      const totals = dailyTotals.get(date) ?? {
+        totalMinutes: 0,
+        completedCycles: 0,
+      };
+      totals.totalMinutes += cycle.durationMinutes;
+      totals.completedCycles++;
+      dailyTotals.set(date, totals);
     }
 
-    // =========================
-    // STREAK ATUAL
-    // =========================
+    const todayTotals = dailyTotals.get(todayKey) ?? {
+      totalMinutes: 0,
+      completedCycles: 0,
+    };
+    const dailyStudy = Array.from({ length: 7 }, (_, index) => {
+      const date = new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        now.getDate() - 6 + index,
+        12,
+      );
+      const dateKey = getLocalDateKey(date);
+      const totals = dailyTotals.get(dateKey);
 
-    if (studyDates.length > 0) {
-      const today = new Date();
-
-      const todayStart =
-        new Date(
-          today.getFullYear(),
-          today.getMonth(),
-          today.getDate(),
-        ).getTime();
-
-      const yesterdayStart =
-        todayStart -
-        1000 * 60 * 60 * 24;
-
-      const lastStudyDate =
-        studyDates[
-          studyDates.length - 1
-        ];
-
-      if (
-        lastStudyDate === todayStart ||
-        lastStudyDate ===
-          yesterdayStart
-      ) {
-        currentStreak = 1;
-
-        for (
-          let i =
-            studyDates.length - 1;
-          i > 0;
-          i--
-        ) {
-          const differenceInDays =
-            (studyDates[i] -
-              studyDates[i - 1]) /
-            (1000 * 60 * 60 * 24);
-
-          if (differenceInDays === 1) {
-            currentStreak++;
-          } else {
-            break;
-          }
-        }
-      }
-    }
+      return {
+        date: dateKey,
+        totalMinutes: totals?.totalMinutes ?? 0,
+        completedCycles: totals?.completedCycles ?? 0,
+      };
+    });
+    const { currentStreak, longestStreak } = calculateStudyStreaks(
+      user.studyCycles.map((cycle) => cycle.completedAt),
+      now,
+    );
 
     return {
       user: {
@@ -549,8 +487,12 @@ export class UsersService {
         ignisPoints: user.ignisPoints,
         totalStudyMinutes,
         completedCycles,
+        todayStudyMinutes: todayTotals.totalMinutes,
+        todayCompletedCycles: todayTotals.completedCycles,
         currentStreak,
         longestStreak,
+        dailyStudy,
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       },
     };
   }
