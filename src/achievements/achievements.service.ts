@@ -1,6 +1,7 @@
 
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { calculateStudyStreaks } from '../study-cycles/study-day.utils';
 
 @Injectable()
 export class AchievementsService {
@@ -20,13 +21,15 @@ export class AchievementsService {
         },
         select: {
           achievementId: true,
+          unlockedAt: true,
         },
       });
 
-    const unlockedIds = new Set(
-      userAchievements.map(
-        (userAchievement) => userAchievement.achievementId,
-      ),
+    const unlockDates = new Map(
+      userAchievements.map((userAchievement) => [
+        userAchievement.achievementId,
+        userAchievement.unlockedAt,
+      ]),
     );
 
     const cycles = await this.prisma.studyCycle.findMany({
@@ -47,46 +50,9 @@ export class AchievementsService {
       0,
     );
 
-    const studyDays: number[] = [
-      ...new Set<number>(
-        cycles
-          .filter((cycle) => cycle.completedAt)
-          .map((cycle) => {
-            const date = new Date(cycle.completedAt!);
-
-            return new Date(
-              date.getFullYear(),
-              date.getMonth(),
-              date.getDate(),
-            ).getTime();
-          }),
-      ),
-    ].sort((a: number, b: number) => b - a);
-
-    let longestStreak = 0;
-
-    if (studyDays.length > 0) {
-      let streak = 1;
-      longestStreak = 1;
-
-      const oneDay = 1000 * 60 * 60 * 24;
-
-      for (let i = 1; i < studyDays.length; i++) {
-        const difference = Math.round(
-          (studyDays[i - 1] - studyDays[i]) / oneDay,
-        );
-
-        if (difference === 1) {
-          streak++;
-        } else {
-          streak = 1;
-        }
-
-        if (streak > longestStreak) {
-          longestStreak = streak;
-        }
-      }
-    }
+    const { longestStreak } = calculateStudyStreaks(
+      cycles.map((cycle) => cycle.completedAt),
+    );
 
     return achievements.map((achievement) => {
       let progress = 0;
@@ -115,9 +81,9 @@ export class AchievementsService {
           progress,
           achievement.requirement,
         ),
-        unlocked: unlockedIds.has(achievement.id),
+        unlocked: unlockDates.has(achievement.id),
+        unlockedAt: unlockDates.get(achievement.id) ?? null,
       };
     });
   }
 }
-

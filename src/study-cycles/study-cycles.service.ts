@@ -1,5 +1,6 @@
 
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   NotFoundException,
@@ -7,6 +8,7 @@ import {
 
 import { PrismaService } from '../prisma/prisma.service';
 import { StudyHistoryQueryDto } from './dto/study-history-query.dto';
+import { calculateStudyStreaks } from './study-day.utils';
 
 @Injectable()
 export class StudyCyclesService {
@@ -29,22 +31,34 @@ export class StudyCyclesService {
   async history(userId: string, query?: StudyHistoryQueryDto) {
     const page = query?.page ?? 1;
     const limit = query?.limit ?? 20;
+    const startDate = query?.startDate
+      ? new Date(query.startDate)
+      : undefined;
+    const endDate = query?.endDate
+      ? new Date(query.endDate)
+      : undefined;
+
+    if (startDate && endDate && startDate > endDate) {
+      throw new BadRequestException(
+        'startDate deve ser anterior ou igual a endDate.',
+      );
+    }
+
     const completedAt =
-      query?.startDate || query?.endDate
+      startDate || endDate
         ? {
-            ...(query?.startDate
-              ? { gte: new Date(query.startDate) }
-              : {}),
-            ...(query?.endDate
-              ? { lte: new Date(query.endDate) }
-              : {}),
+            ...(startDate ? { gte: startDate } : {}),
+            ...(endDate ? { lte: endDate } : {}),
           }
         : undefined;
 
     const where = {
       userId,
-      completed: true,
       ...(completedAt ? { completedAt } : {}),
+    };
+    const completedWhere = {
+      ...where,
+      completed: true,
     };
 
     const [cycles, total, aggregate] = await Promise.all([
@@ -59,11 +73,12 @@ export class StudyCyclesService {
           startedAt: true,
           completedAt: true,
           ignisEarned: true,
+          completed: true,
         },
       }),
       this.prisma.studyCycle.count({ where }),
       this.prisma.studyCycle.aggregate({
-        where,
+        where: completedWhere,
         _sum: {
           durationMinutes: true,
           ignisEarned: true,
@@ -186,75 +201,10 @@ async stats(userId: string) {
 
   
 
-  const studyDays: number[] = [
-    ...new Set<number>(
-      cycles
-        .filter((cycle) => cycle.completedAt)
-        .map((cycle) => {
-          const date = new Date(cycle.completedAt!);
-
-          return new Date(
-            date.getFullYear(),
-            date.getMonth(),
-            date.getDate(),
-          ).getTime();
-        }),
-    ),
-  ].sort((a: number, b: number) => b - a);
-
-  let currentStreak = 0;
-  let longestStreak = 0;
-
-  const oneDay = 1000 * 60 * 60 * 24;
-
-  if (studyDays.length > 0) {
-    const todayTime = new Date(
-      now.getFullYear(),
-      now.getMonth(),
-      now.getDate(),
-    ).getTime();
-
-    const mostRecentDay = studyDays[0];
-
-    const daysSinceLastStudy = Math.round(
-      (todayTime - mostRecentDay) / oneDay,
-    );
-
-    if (daysSinceLastStudy <= 1) {
-      currentStreak = 1;
-
-      for (let i = 1; i < studyDays.length; i++) {
-        const difference = Math.round(
-          (studyDays[i - 1] - studyDays[i]) / oneDay,
-        );
-
-        if (difference === 1) {
-          currentStreak++;
-        } else {
-          break;
-        }
-      }
-    }
-
-    let streak = 1;
-    longestStreak = 1;
-
-    for (let i = 1; i < studyDays.length; i++) {
-      const difference = Math.round(
-        (studyDays[i - 1] - studyDays[i]) / oneDay,
-      );
-
-      if (difference === 1) {
-        streak++;
-      } else {
-        streak = 1;
-      }
-
-      if (streak > longestStreak) {
-        longestStreak = streak;
-      }
-    }
-  }
+  const { currentStreak, longestStreak } = calculateStudyStreaks(
+    cycles.map((cycle) => cycle.completedAt),
+    now,
+  );
 
   return {
     totalStudyMinutes,
@@ -351,52 +301,9 @@ async stats(userId: string) {
       return 0;
     }
 
-    const studyDays: number[] = [
-      ...new Set<number>(
-        cycles
-          .filter((cycle: any) => cycle.completedAt)
-          .map((cycle: any) => {
-            const date = new Date(cycle.completedAt);
-
-            return new Date(
-              date.getFullYear(),
-              date.getMonth(),
-              date.getDate(),
-            ).getTime();
-          }),
-      ),
-    ];
-
-    studyDays.sort(
-      (a: number, b: number) => b - a,
-    );
-
-    if (studyDays.length === 0) {
-      return 0;
-    }
-
-    const oneDay =
-      1000 * 60 * 60 * 24;
-
-    let streak = 1;
-
-    for (
-      let i = 1;
-      i < studyDays.length;
-      i++
-    ) {
-      const difference =
-        (studyDays[i - 1] - studyDays[i]) /
-        oneDay;
-
-      if (difference === 1) {
-        streak++;
-      } else {
-        break;
-      }
-    }
-
-    return streak;
+    return calculateStudyStreaks(
+      cycles.map((cycle: { completedAt: Date | null }) => cycle.completedAt),
+    ).currentStreak;
   }
 
 
@@ -553,4 +460,3 @@ async stats(userId: string) {
     return result;
   }
 }
-
