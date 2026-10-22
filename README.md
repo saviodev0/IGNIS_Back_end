@@ -23,7 +23,7 @@
 
 ## Description
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+API do IGNIS para gerenciar usuários, ciclos de estudo, metas e conquistas.
 
 ## Project setup
 
