@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "User" ALTER COLUMN "isStudent" DROP DEFAULT,
+ALTER COLUMN "whichCourse" DROP DEFAULT;
