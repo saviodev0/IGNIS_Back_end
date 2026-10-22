@@ -23,7 +23,7 @@
 
 ## Description
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+API do IGNIS para gerenciar usuários, ciclos de estudo, metas e conquistas.
 
 ## Project setup
 
@@ -56,6 +56,25 @@ $ npm run test:e2e
 # test coverage
 $ npm run test:cov
 ```
+
+## Progress API
+
+`GET /users/me/stats` returns lifetime study totals and the current IGNIS balance,
+plus `todayStudyMinutes`, `todayCompletedCycles`, and `dailyStudy` for the last
+seven local calendar days (including today). Days without completed cycles are
+returned with zero totals. `stats.timezone` identifies the server's local
+timezone, configured by `TZ` when set or otherwise inherited from the runtime
+environment. Daily grouping and streak calculations use that same timezone.
+
+`GET /study-cycles/history` is paginated and includes both completed and
+incomplete sessions. The `completed` boolean identifies the session state;
+incomplete sessions have `completedAt: null`. `durationMinutes` is the
+registered cycle duration and is not a measured effective duration. Its summary
+totals include completed sessions only.
+
+`GET /goals` returns progress calculated from the authenticated user's completed
+cycles within each goal's date range. `GET /achievements` includes the persisted
+`unlockedAt` timestamp, or `null` for locked achievements.
 
 ## Deployment
 
