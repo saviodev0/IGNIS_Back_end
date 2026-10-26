@@ -19,8 +19,9 @@ export class CreateUserDto {
   @Min(1)
   age!: number;
 
+  @IsOptional()
   @IsBoolean()
-  isStudent!: boolean;
+  isStudent?: boolean;
 
   @IsOptional()
   @IsString()
