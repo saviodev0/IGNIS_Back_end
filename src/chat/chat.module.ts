@@ -8,6 +8,7 @@ import { GoalsModule } from '../goals/goals.module';
 import { ChatController } from './chat.controller';
 import { ChatService } from './chat.service';
 import { FileTextService } from './file-text.service';
+import { FileStorageService } from './file-storage.service';
 import { GroqService } from './groq.service';
 import { StudentContextService } from './student-context.service';
 import { IntentRouterService } from './intent-router.service';
@@ -42,6 +43,7 @@ import { ChatFile, ChatFileSchema } from './schemas/chat-file.schema';
   providers: [
     ChatService,
     FileTextService,
+    FileStorageService,
     GroqService,
     StudentContextService,
     IntentRouterService,

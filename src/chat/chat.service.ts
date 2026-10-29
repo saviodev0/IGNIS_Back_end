@@ -7,14 +7,16 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { isValidObjectId, Model } from 'mongoose';
+import { isValidObjectId, Model, Types } from 'mongoose';
 
 import { Chat, ChatDocument } from './schemas/chat.schema';
 import { ChatMessage } from './schemas/message.schema';
 import { ChatFile } from './schemas/chat-file.schema';
+import { rankChunks } from './chunk-ranker';
 import { FileTextService } from './file-text.service';
+import { FileStorageService } from './file-storage.service';
 import { GroqService, LlmMessage } from './groq.service';
-import { StudentContextService } from './student-context.service';
+import { StudentContextService, formatMinutes } from './student-context.service';
 import { IntentRouterService } from './intent-router.service';
 import { DirectAnswerService } from './direct-answer.service';
 
@@ -25,22 +27,6 @@ const DAILY_MESSAGE_LIMIT = 100; // mensagens do aluno por dia
 const MAX_FILES_PER_CHAT = 5;
 const CONTEXT_CHUNKS = 4; // trechos de arquivo enviados por pergunta
 
-const STOPWORDS = new Set([
-  'para', 'como', 'qual', 'quais', 'sobre', 'isso', 'esse', 'essa', 'este', 'esta',
-  'mais', 'muito', 'pode', 'poderia', 'quero', 'fazer', 'esse', 'seria', 'onde',
-  'quando', 'porque', 'entre', 'tambem', 'ainda', 'sobre', 'preciso', 'dele', 'dela',
-]);
-
-function tokenize(text: string): string[] {
-  return (
-    text
-      .toLowerCase()
-      .normalize('NFD')
-      .replace(/[̀-ͯ]/g, '')
-      .match(/[a-z0-9]{4,}/g) ?? []
-  ).filter((word) => !STOPWORDS.has(word));
-}
-
 @Injectable()
 export class ChatService {
   private readonly logger = new Logger(ChatService.name);
@@ -50,6 +36,7 @@ export class ChatService {
     @InjectModel(ChatMessage.name) private readonly messages: Model<ChatMessage>,
     @InjectModel(ChatFile.name) private readonly files: Model<ChatFile>,
     private readonly fileText: FileTextService,
+    private readonly storage: FileStorageService,
     private readonly groq: GroqService,
     private readonly studentContext: StudentContextService,
     private readonly intentRouter: IntentRouterService,
@@ -96,7 +83,7 @@ export class ChatService {
         .sort({ createdAt: 1, _id: 1 })
         .select('role content createdAt')
         .lean(),
-      this.files.find({ chatId: chat._id }).select('name size charCount createdAt').lean(),
+      this.files.find({ chatId: chat._id }).select('name size charCount createdAt storedAs').lean(),
     ]);
 
     return {
@@ -104,7 +91,7 @@ export class ChatService {
       title: chat.title,
       studyMinutes: chat.studyMinutes,
       messages,
-      files,
+      files: files.map(({ storedAs, ...file }) => ({ ...file, hasOriginal: !!storedAs })),
     };
   }
 
@@ -114,6 +101,7 @@ export class ChatService {
     await Promise.all([
       this.messages.deleteMany({ chatId: chat._id }),
       this.files.deleteMany({ chatId: chat._id }),
+      this.storage.removeChat(userId, chat._id.toString()),
       chat.deleteOne(),
     ]);
 
@@ -147,16 +135,57 @@ export class ChatService {
     const text = await this.fileText.extract(file);
     const name = Buffer.from(file.originalname, 'latin1').toString('utf8');
 
-    const saved = await this.files.create({
-      chatId: chat._id,
-      userId,
-      name,
-      size: file.size,
-      charCount: text.length,
-      chunks: this.fileText.split(text),
-    });
+    const fileId = new Types.ObjectId();
+    const storedAs = await this.storage.save(userId, chat._id.toString(), fileId.toString(), file);
 
-    return { id: saved._id, name, size: file.size, charCount: text.length };
+    try {
+      await this.files.create({
+        _id: fileId,
+        chatId: chat._id,
+        userId,
+        name,
+        size: file.size,
+        charCount: text.length,
+        storedAs,
+        chunks: this.fileText.split(text),
+      });
+    } catch (error) {
+      await this.storage.remove(storedAs);
+      throw error;
+    }
+
+    return { id: fileId, name, size: file.size, charCount: text.length, hasOriginal: true };
+  }
+
+  private async getOwnedFile(userId: string, chatId: string, fileId: string) {
+    const chat = await this.getOwned(userId, chatId);
+    const file = isValidObjectId(fileId)
+      ? await this.files.findOne({ _id: fileId, chatId: chat._id })
+      : null;
+
+    if (!file) throw new NotFoundException('Arquivo não encontrado.');
+
+    return file;
+  }
+
+  /** Abre o original para download (só o dono do chat). */
+  async openFile(userId: string, chatId: string, fileId: string) {
+    const file = await this.getOwnedFile(userId, chatId, fileId);
+
+    if (!file.storedAs) {
+      throw new NotFoundException('O original deste arquivo não foi guardado.');
+    }
+
+    return { name: file.name, stream: this.storage.open(file.storedAs) };
+  }
+
+  async removeFile(userId: string, chatId: string, fileId: string) {
+    const file = await this.getOwnedFile(userId, chatId, fileId);
+
+    if (file.storedAs) await this.storage.remove(file.storedAs);
+    await file.deleteOne();
+
+    return { message: 'Arquivo removido com sucesso.' };
   }
 
   /** Escolhe os trechos dos arquivos mais relacionados à pergunta. */
@@ -166,24 +195,12 @@ export class ChatService {
 
     if (all.length === 0) return [];
 
-    const terms = [...new Set(tokenize(question))];
-
-    const scored = all
-      .map((chunk, index) => {
-        const haystack = tokenize(chunk.text);
-        const score = terms.reduce(
-          (total, term) => total + haystack.filter((word) => word === term).length,
-          0,
-        );
-        return { ...chunk, score, index };
-      })
-      .filter((chunk) => chunk.score > 0)
-      .sort((a, b) => b.score - a.score)
-      .slice(0, CONTEXT_CHUNKS)
-      .sort((a, b) => a.index - b.index);
+    const found = rankChunks(all, question, CONTEXT_CHUNKS).sort(
+      (x, y) => all.indexOf(x) - all.indexOf(y),
+    );
 
     // Pergunta genérica ("resuma o arquivo"): usa o começo do material
-    return scored.length > 0 ? scored : all.slice(0, CONTEXT_CHUNKS);
+    return found.length > 0 ? found : all.slice(0, CONTEXT_CHUNKS);
   }
 
   // =========================
@@ -201,6 +218,26 @@ export class ChatService {
     signal?: AbortSignal,
   ): AsyncGenerator<string> {
     const chat = await this.getOwned(userId, chatId);
+
+    // "Estudei 2h": soma ao tempo de estudo deste conteúdo, sem usar a IA
+    const loggedMinutes = this.intentRouter.detectStudyLog(content);
+
+    if (loggedMinutes) {
+      chat.studyMinutes += loggedMinutes;
+
+      const answer = `Registrei ${formatMinutes(loggedMinutes)} de estudo neste chat. Total deste conteúdo: ${formatMinutes(chat.studyMinutes)}.`;
+
+      await this.messages.create({ chatId: chat._id, userId, role: 'user', content, direct: true });
+      await this.messages.create({ chatId: chat._id, userId, role: 'assistant', content: answer, direct: true });
+
+      if (chat.title === 'Novo chat') {
+        chat.title = content.replace(/\s+/g, ' ').slice(0, 50);
+      }
+      await chat.save();
+
+      yield answer;
+      return;
+    }
 
     // Perguntas sobre os próprios números do aluno: responde direto do banco, sem IA
     const intents = this.intentRouter.detect(content);

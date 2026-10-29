@@ -20,6 +20,10 @@ export class ChatFile {
   @Prop({ required: true })
   charCount!: number;
 
+  // Caminho do original no disco (relativo à pasta de uploads); ausente em arquivos antigos
+  @Prop()
+  storedAs?: string;
+
   // Texto extraído uma única vez e dividido em trechos
   @Prop({ type: [String], default: [] })
   chunks!: string[];

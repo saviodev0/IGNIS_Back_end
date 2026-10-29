@@ -76,6 +76,29 @@ totals include completed sessions only.
 cycles within each goal's date range. `GET /achievements` includes the persisted
 `unlockedAt` timestamp, or `null` for locked achievements.
 
+## AI chat
+
+Authenticated students chat with an AI about their study material (`/chats`).
+Chats, messages and the text extracted from uploads live in MongoDB; the AI
+provider (Groq) keeps no history.
+
+Environment variables:
+
+| Variable | Purpose |
+| --- | --- |
+| `API_KEY` (or `GROQ_API_KEY`) | Groq API key |
+| `MONGODB_URL` | MongoDB connection string (defaults to the docker-compose database) |
+| `UPLOADS_DIR` | Where original PDF/DOCX uploads are stored (defaults to `./arquivos`) |
+
+Uploaded files are kept on the server disk only, as
+`<UPLOADS_DIR>/<userId>/<chatId>/<fileId>.<ext>`. The folder is git-ignored; in
+production mount it on a persistent volume, otherwise redeploys erase it. Only
+the chat owner can download (`GET /chats/:id/files/:fileId`) or delete
+(`DELETE /chats/:id/files/:fileId`) a file.
+
+Messages like "quantas horas estudei hoje?" are answered from the database
+without calling the AI, and "estudei 1h30" adds time to the chat.
+
 ## IGNIS intent router
 
 `POST /ignis/intent` accepts `{ "message": "..." }` and returns the first matching
