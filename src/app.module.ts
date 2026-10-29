@@ -1,5 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { APP_GUARD } from '@nestjs/core';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -18,6 +20,12 @@ import { ChatModule } from './chat/chat.module';
       isGlobal: true,
     }),
 
+    // Limite geral por IP; login, cadastro e chat têm limites mais baixos (@Throttle)
+    ThrottlerModule.forRoot({
+      throttlers: [{ ttl: 60_000, limit: 120 }],
+      errorMessage: 'Muitas requisições. Aguarde um instante e tente novamente.',
+    }),
+
     IgnisModule,
     PrismaModule,
     UsersModule,
@@ -30,6 +38,6 @@ import { ChatModule } from './chat/chat.module';
 
   controllers: [AppController],
 
-  providers: [AppService],
+  providers: [AppService, { provide: APP_GUARD, useClass: ThrottlerGuard }],
 })
 export class AppModule {}

@@ -99,6 +99,13 @@ the chat owner can download (`GET /chats/:id/files/:fileId`) or delete
 Messages like "quantas horas estudei hoje?" are answered from the database
 without calling the AI, and "estudei 1h30" adds time to the chat.
 
+## Rate limiting
+
+Requests are limited per IP (`@nestjs/throttler`): 120/min in general, 10/min on
+login, 5/min on register, 20/min on chat messages and 10/min on uploads. Exceeding
+a limit returns `429`. Behind a reverse proxy or load balancer set `TRUST_PROXY=1`,
+otherwise every request looks like it comes from the proxy's IP.
+
 ## IGNIS intent router
 
 `POST /ignis/intent` accepts `{ "message": "..." }` and returns the first matching
