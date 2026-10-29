@@ -14,6 +14,7 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { Throttle } from '@nestjs/throttler';
 import type { Response } from 'express';
 
 import { AuthGuard } from '../auth/guards/auth.guard';
@@ -56,6 +57,7 @@ export class ChatController {
     return this.chatService.addStudyTime(request.user.sub, id, dto.minutes);
   }
 
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
   @Post(':id/files')
   @UseInterceptors(FileInterceptor('file', { limits: { fileSize: 10 * 1024 * 1024 } }))
   addFile(
@@ -91,6 +93,7 @@ export class ChatController {
    * Resposta em streaming (Server-Sent Events). Cada evento é uma linha
    * `data: {"type":"delta","content":"..."}`, e o fim vem como `{"type":"done"}`.
    */
+  @Throttle({ default: { limit: 20, ttl: 60_000 } })
   @Post(':id/messages')
   async sendMessage(
     @Req() request: any,
