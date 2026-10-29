@@ -8,6 +8,7 @@ import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 
 import { PrismaService } from '../prisma/prisma.service';
+import { CreateUserDto } from '../users/dto/create-user.dto';
 
 @Injectable()
 export class AuthService {
@@ -16,15 +17,11 @@ export class AuthService {
     private readonly jwtService: JwtService,
   ) {}
 
-  async register(
-    name: string,
-    age: number,
-    email: string,
-    isStudent: boolean,
-    whichCourse: string,
-    phone: string,
-    password: string,
-  ) {
+  async register(dto: CreateUserDto) {
+    const { name, age, email, phone, password } = dto;
+    const isStudent = dto.isStudent ?? false;
+    const whichCourse = dto.whichCourse ?? '';
+
     const existingUser = await this.prisma.user.findUnique({
       where: {
         email,

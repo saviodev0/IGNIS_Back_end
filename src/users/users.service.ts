@@ -111,6 +111,8 @@ export class UsersService {
       data: {
         name,
         age,
+        isStudent: createUserDto.isStudent ?? false,
+        whichCourse: createUserDto.whichCourse ?? '',
         email,
         phone,
         password: passwordHash,
