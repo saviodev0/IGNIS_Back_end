@@ -76,6 +76,15 @@ totals include completed sessions only.
 cycles within each goal's date range. `GET /achievements` includes the persisted
 `unlockedAt` timestamp, or `null` for locked achievements.
 
+## IGNIS intent router
+
+`POST /ignis/intent` accepts `{ "message": "..." }` and returns the first matching
+intent and its API route. Supported intents are `study_cycle`, `study_history`,
+`progress`, `goals`, `achievements`, `greeting`, and `help`. Messages that do not
+match a supported pattern return `unknown` with a `null` route. Matching is
+case-insensitive and ignores Portuguese accents; the message must contain
+between 1 and 1000 characters.
+
 ## Deployment
 
 When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
