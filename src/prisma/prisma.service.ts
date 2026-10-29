@@ -46,6 +46,11 @@ export class PrismaService
     return this.prisma.$transaction.bind(this.prisma);
   }
 
+  async isHealthy(): Promise<boolean> {
+    await this.prisma.$queryRaw`SELECT 1`;
+    return true;
+  }
+
   async onModuleInit() {
     await this.prisma.$connect();
   }
