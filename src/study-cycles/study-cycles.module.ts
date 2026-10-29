@@ -9,5 +9,6 @@ import { AuthModule } from '../auth/auth.module';
   imports: [PrismaModule, AuthModule],
   controllers: [StudyCyclesController],
   providers: [StudyCyclesService],
+  exports: [StudyCyclesService],
 })
 export class StudyCyclesModule {}
