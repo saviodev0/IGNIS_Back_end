@@ -3,6 +3,9 @@
 /node_modules
 /build
 
+# Arquivos enviados pelos alunos (ficam só no servidor)
+/arquivos
+
 # Logs
 logs
 *.log

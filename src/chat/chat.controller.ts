@@ -8,6 +8,7 @@ import {
   Post,
   Req,
   Res,
+  StreamableFile,
   UploadedFile,
   UseGuards,
   UseInterceptors,
@@ -63,6 +64,27 @@ export class ChatController {
     @UploadedFile() file?: Express.Multer.File,
   ) {
     return this.chatService.addFile(request.user.sub, id, file);
+  }
+
+  @Get(':id/files/:fileId')
+  async download(
+    @Req() request: any,
+    @Param('id') id: string,
+    @Param('fileId') fileId: string,
+  ) {
+    const { name, stream } = await this.chatService.openFile(request.user.sub, id, fileId);
+
+    return new StreamableFile(stream, {
+      type: name.toLowerCase().endsWith('.pdf')
+        ? 'application/pdf'
+        : 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      disposition: `inline; filename*=UTF-8''${encodeURIComponent(name)}`,
+    });
+  }
+
+  @Delete(':id/files/:fileId')
+  removeFile(@Req() request: any, @Param('id') id: string, @Param('fileId') fileId: string) {
+    return this.chatService.removeFile(request.user.sub, id, fileId);
   }
 
   /**

@@ -28,3 +28,26 @@ describe('IntentRouterService', () => {
     expect(router.detect(question)).toEqual(expected);
   });
 });
+
+describe('IntentRouterService.detectStudyLog', () => {
+  const router = new IntentRouterService();
+
+  const cases: [string, number | null][] = [
+    ['estudei 2h de cálculo', 120],
+    ['Estudei 1h30 hoje', 90],
+    ['estudei 1 hora e 15 minutos', 75],
+    ['estudei 45 minutos', 45],
+    ['estudei 2,5 horas', 150],
+    ['estudei meia hora', 30],
+    ['registre 20 min de estudo', 20],
+    ['quantas horas estudei?', null],
+    ['estudei bastante hoje', null],
+    ['quanto devo estudar 2h por dia', null],
+    ['explique o ciclo de Krebs em 2 horas', null],
+    ['estudei 30 horas', null],
+  ];
+
+  it.each(cases)('%s', (message, expected) => {
+    expect(router.detectStudyLog(message)).toBe(expected);
+  });
+});

@@ -37,7 +37,7 @@ export class FileTextService {
 
     if (!text) {
       throw new BadRequestException(
-        'Nenhum texto encontrado no arquivo (PDFs escaneados/imagens não são suportados).',
+        'Não encontramos texto neste arquivo (parece um PDF escaneado ou só com imagens). Envie um PDF ou Word com texto selecionável.',
       );
     }
 
