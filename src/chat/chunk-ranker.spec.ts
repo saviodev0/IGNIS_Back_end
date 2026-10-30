@@ -1,4 +1,4 @@
-import { rankChunks, stem } from './chunk-ranker';
+import { mentionsMaterial, rankChunks, stem } from './chunk-ranker';
 
 const chunks = [
   { text: 'A mitocôndria é a organela responsável pela respiração celular e produção de energia.' },
@@ -26,5 +26,17 @@ describe('rankChunks', () => {
 
   it('devolve vazio quando nada combina', () => {
     expect(rankChunks(chunks, 'receita de bolo', 3)).toEqual([]);
+  });
+});
+
+describe('mentionsMaterial', () => {
+  it.each([
+    ['resuma o arquivo', true],
+    ['o que diz o PDF que enviei?', true],
+    ['faça um resumo do capítulo 2', true],
+    ['oi, tudo bem?', false],
+    ['explique a fotossíntese', false],
+  ])('%s', (question, expected) => {
+    expect(mentionsMaterial(question)).toBe(expected);
   });
 });

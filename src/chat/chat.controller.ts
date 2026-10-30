@@ -134,10 +134,10 @@ export class ChatController {
       response.flushHeaders();
       streaming = true;
 
-      if (!first.done) send({ type: 'delta', content: first.value });
+      if (!first.done) send(first.value);
 
-      for await (const piece of stream) {
-        send({ type: 'delta', content: piece });
+      for await (const event of stream) {
+        send(event);
       }
 
       send({ type: 'done' });

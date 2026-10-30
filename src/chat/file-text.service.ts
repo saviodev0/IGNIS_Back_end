@@ -6,18 +6,35 @@ const MAX_CHARS = 500_000;
 const CHUNK_SIZE = 1500;
 const CHUNK_OVERLAP = 200;
 
+export interface ExtractedDocument {
+  text: string;
+  // PDFs têm texto por página; DOCX não
+  pages?: { page: number; text: string }[];
+}
+
+export interface TextChunk {
+  text: string;
+  page: number; // 0 quando não há página
+}
+
+const clean = (text: string) =>
+  text.replace(/\r/g, '').replace(/[ \t]+/g, ' ').replace(/\n{3,}/g, '\n\n').trim();
+
 @Injectable()
 export class FileTextService {
-  async extract(file: Express.Multer.File): Promise<string> {
+  async extract(file: Express.Multer.File): Promise<ExtractedDocument> {
     const name = file.originalname.toLowerCase();
     const buffer = file.buffer;
 
     let text: string;
+    let pages: ExtractedDocument['pages'];
 
     if (name.endsWith('.pdf') && buffer.subarray(0, 4).toString() === '%PDF') {
       const parser = new PDFParse({ data: new Uint8Array(buffer) });
       try {
-        text = (await parser.getText()).text;
+        const result = await parser.getText();
+        text = result.text;
+        pages = result.pages.map((p) => ({ page: p.num, text: clean(p.text) })).filter((p) => p.text);
       } catch {
         throw new BadRequestException('Não foi possível ler este PDF.');
       } finally {
@@ -33,7 +50,7 @@ export class FileTextService {
       throw new BadRequestException('Envie apenas arquivos PDF ou DOCX.');
     }
 
-    text = text.replace(/\r/g, '').replace(/[ \t]+/g, ' ').replace(/\n{3,}/g, '\n\n').trim();
+    text = clean(text);
 
     if (!text) {
       throw new BadRequestException(
@@ -41,7 +58,24 @@ export class FileTextService {
       );
     }
 
-    return text.slice(0, MAX_CHARS);
+    // Limita o total guardado, cortando as últimas páginas se passar
+    if (pages) {
+      let used = 0;
+      pages = pages.filter((p) => (used += p.text.length) <= MAX_CHARS);
+    }
+
+    return { text: text.slice(0, MAX_CHARS), pages };
+  }
+
+  /** Divide o documento em trechos; em PDFs cada trecho fica dentro de uma página. */
+  chunk(document: ExtractedDocument): TextChunk[] {
+    if (document.pages?.length) {
+      return document.pages.flatMap((page) =>
+        this.split(page.text).map((text) => ({ text, page: page.page })),
+      );
+    }
+
+    return this.split(document.text).map((text) => ({ text, page: 0 }));
   }
 
   split(text: string): string[] {

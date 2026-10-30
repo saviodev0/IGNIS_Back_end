@@ -27,6 +27,10 @@ export class ChatFile {
   // Texto extraído uma única vez e dividido em trechos
   @Prop({ type: [String], default: [] })
   chunks!: string[];
+
+  // Página de cada trecho (0 quando o formato não tem páginas, como DOCX); mesma ordem de `chunks`
+  @Prop({ type: [Number], default: [] })
+  chunkPages!: number[];
 }
 
 export const ChatFileSchema = SchemaFactory.createForClass(ChatFile);

@@ -77,3 +77,13 @@ export function rankChunks<T extends RankableChunk>(chunks: T[], question: strin
     .slice(0, limit)
     .map((item) => item.chunk);
 }
+
+/** A pergunta fala do material em geral ("resuma o arquivo", "o que diz o pdf")? */
+export function mentionsMaterial(question: string): boolean {
+  const text = question
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '');
+
+  return /\b(arquivo|pdf|docx?|word|documento|material|texto|apostila|resum\w*|capitulo|slides?|anexo|enviei|mandei|conteudo)\b/.test(text);
+}
