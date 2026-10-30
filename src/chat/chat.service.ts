@@ -14,6 +14,7 @@ import { ChatMessage } from './schemas/message.schema';
 import { ChatFile } from './schemas/chat-file.schema';
 import { cosine, fuseRankings, mentionsMaterial, rankChunks } from './chunk-ranker';
 import { FileTextService } from './file-text.service';
+import { formatMemory, shouldUseMemory } from './chat-memory';
 import { EmbeddingService } from './embedding.service';
 import { FileStorageService } from './file-storage.service';
 import { GroqService, LlmMessage } from './groq.service';
@@ -228,6 +229,32 @@ export class ChatService {
     return { message: 'Arquivo removido com sucesso.' };
   }
 
+  /** Título, tempo, arquivos e resumo dos últimos chats do aluno (exceto o atual). */
+  private async otherChatsMemory(userId: string, currentChatId: ChatDocument['_id']) {
+    const others = await this.chats
+      .find({ userId, _id: { $ne: currentChatId } })
+      .sort({ updatedAt: -1 })
+      .limit(4)
+      .select('title summary studyMinutes')
+      .lean();
+
+    if (others.length === 0) return null;
+
+    const files = await this.files
+      .find({ chatId: { $in: others.map((chat) => chat._id) } })
+      .select('chatId name')
+      .lean();
+
+    return formatMemory(
+      others.map((chat) => ({
+        title: chat.title,
+        summary: chat.summary,
+        studyMinutes: chat.studyMinutes,
+        files: files.filter((file) => file.chatId.equals(chat._id)).map((file) => file.name),
+      })),
+    );
+  }
+
   /**
    * Escolhe os trechos mais relacionados à pergunta juntando duas buscas: por palavras-chave (BM25)
    * e semântica (embeddings), que acha o trecho mesmo quando a pergunta usa outras palavras.
@@ -372,11 +399,17 @@ export class ChatService {
     // Só quando o aluno pede um plano, a IA recebe o histórico detalhado (evita gastar tokens à toa)
     const wantsPlan = this.intentRouter.wantsStudyPlan(content);
 
-    const [studentInfo, chunks, planInfo, fileNames] = await Promise.all([
+    // Continuidade entre chats: só no começo da conversa ou quando o aluno cita estudos anteriores
+    const memoryPromise = shouldUseMemory(content, previous.length)
+      ? this.otherChatsMemory(userId, chat._id)
+      : Promise.resolve(null);
+
+    const [studentInfo, chunks, planInfo, fileNames, memory] = await Promise.all([
       this.studentContext.build(userId, chat.studyMinutes),
       this.relevantChunks(chat._id, content),
       wantsPlan ? this.studentContext.buildPlan(userId) : null,
       wantsPlan ? this.files.find({ chatId: chat._id }).distinct('name') : [],
+      memoryPromise,
     ]);
 
     const userMessage = await this.messages.create({
@@ -391,7 +424,7 @@ export class ChatService {
     }
 
     const llmMessages: LlmMessage[] = [
-      { role: 'system', content: this.systemPrompt(studentInfo, chat.summary, chunks, planInfo, fileNames) },
+      { role: 'system', content: this.systemPrompt(studentInfo, chat.summary, chunks, planInfo, fileNames, memory) },
       ...previous.map((m) => ({ role: m.role, content: m.content })),
       { role: 'user', content },
     ];
@@ -434,6 +467,7 @@ export class ChatService {
     chunks: { file: string; page?: number; text: string }[],
     planInfo: string | null = null,
     fileNames: string[] = [],
+    memory: string | null = null,
   ): string {
     const parts = [
       'Você é o assistente de estudos do IGNIS, um app de ciclos de estudo (pomodoro) com pontos, metas e sequências.',
@@ -451,6 +485,13 @@ export class ChatService {
           'respeite a média que ele já consegue estudar (aumente no máximo 20%), priorize os dias da semana em que ele rende mais, ' +
           'use as datas reais a partir de "Hoje é ..." (confira o dia da semana de cada data), distribua em ciclos de 25 minutos com pausas, inclua as metas ativas e termine com uma tabela dia a dia (dia, assunto, ciclos, tempo). ' +
           'Se faltarem dados (por exemplo, prazo da prova ou matéria), faça o melhor plano possível e pergunte no fim o que faltou.',
+      );
+    }
+
+    if (memory) {
+      parts.push(
+        `\n## Outros estudos do aluno (conversas anteriores)\n${memory}\n` +
+          'Use isto só para dar continuidade quando fizer sentido (ex.: "você já estudou X"); não cite se não for relevante.',
       );
     }
 
