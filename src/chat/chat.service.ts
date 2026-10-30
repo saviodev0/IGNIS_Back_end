@@ -408,7 +408,7 @@ export class ChatService {
     if (chunks.length > 0) {
       parts.push(
         '\n## Trechos do material enviado pelo aluno\n' +
-          'Priorize estes trechos quando a pergunta for sobre o material; se a resposta não estiver neles, avise e complemente com seu conhecimento geral. Quando usar o material, cite a fonte entre parênteses no fim da frase, no formato (arquivo, p. N) — só use arquivos e páginas que aparecem acima.\n' +
+          'Priorize estes trechos quando a pergunta for sobre o material; se a resposta não estiver neles, avise e complemente com seu conhecimento geral. Quando usar o material, cite a fonte entre parênteses no fim da frase, copiando o nome exato do arquivo e a página, por exemplo (Biologia.pdf, p. 3) — só use arquivos e páginas que aparecem acima.\n' +
           chunks.map((chunk) => `[${chunk.file}${chunk.page ? `, p. ${chunk.page}` : ''}]\n${chunk.text}`).join('\n---\n'),
       );
     }
