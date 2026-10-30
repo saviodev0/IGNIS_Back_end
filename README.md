@@ -104,6 +104,22 @@ and embeds each chunk in the background after the upload. The model (~160 MB) is
 downloaded on first start and needs about 450 MB of RAM; if it cannot load, the
 chat keeps working with keyword search only.
 
+Uploads are split by structure (headings and paragraphs, ~1100 characters, the
+section title is repeated in continuation chunks) and PDF chunks remember their
+page. Replies are streamed over SSE as markdown; before the text, an event
+`{"type":"sources","sources":[{"file","page"}]}` lists the files and pages used,
+and the sources are saved with the message. Questions unrelated to the material
+send no chunks and show no sources.
+
+Other behaviours:
+
+- `PATCH /chats/:id` with `{ "title" }` renames a chat (1 to 80 characters).
+- Requests for a study plan ("monte um plano de estudos") also send the recent
+  study history, goals and the calendar of the next days to the AI.
+- At the start of a conversation, or when the student mentions earlier studies
+  ("lembra do que estudamos"), the AI receives title, study time, files and
+  summary of the student's last 4 chats. Chats of other users are never included.
+
 Messages like "quantas horas estudei hoje?" are answered from the database
 without calling the AI, and "estudei 1h30" adds time to the chat.
 
