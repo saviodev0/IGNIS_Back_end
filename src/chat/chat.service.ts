@@ -305,9 +305,14 @@ export class ChatService {
       .lean();
     previous.reverse();
 
-    const [studentInfo, chunks] = await Promise.all([
+    // Só quando o aluno pede um plano, a IA recebe o histórico detalhado (evita gastar tokens à toa)
+    const wantsPlan = this.intentRouter.wantsStudyPlan(content);
+
+    const [studentInfo, chunks, planInfo, fileNames] = await Promise.all([
       this.studentContext.build(userId, chat.studyMinutes),
       this.relevantChunks(chat._id, content),
+      wantsPlan ? this.studentContext.buildPlan(userId) : null,
+      wantsPlan ? this.files.find({ chatId: chat._id }).distinct('name') : [],
     ]);
 
     const userMessage = await this.messages.create({
@@ -322,7 +327,7 @@ export class ChatService {
     }
 
     const llmMessages: LlmMessage[] = [
-      { role: 'system', content: this.systemPrompt(studentInfo, chat.summary, chunks) },
+      { role: 'system', content: this.systemPrompt(studentInfo, chat.summary, chunks, planInfo, fileNames) },
       ...previous.map((m) => ({ role: m.role, content: m.content })),
       { role: 'user', content },
     ];
@@ -354,6 +359,8 @@ export class ChatService {
     studentInfo: string,
     summary: string,
     chunks: { file: string; text: string }[],
+    planInfo: string | null = null,
+    fileNames: string[] = [],
   ): string {
     const parts = [
       'Você é o assistente de estudos do IGNIS, um app de ciclos de estudo (pomodoro) com pontos, metas e sequências.',
@@ -362,6 +369,17 @@ export class ChatService {
       'Use os dados do aluno quando ajudar (ex.: sugerir ciclos, comentar a sequência ou metas), sem inventar números.',
       `\n## Dados do aluno\n${studentInfo}`,
     ];
+
+    if (planInfo) {
+      parts.push(
+        `\n## Histórico recente de estudo (para o plano)\n${planInfo}` +
+          (fileNames.length ? `\nMateriais enviados neste chat: ${fileNames.join(', ')}` : '') +
+          '\n\nO aluno pediu um plano de estudo. Monte um plano realista usando SOMENTE os números acima: ' +
+          'respeite a média que ele já consegue estudar (aumente no máximo 20%), priorize os dias da semana em que ele rende mais, ' +
+          'use as datas reais a partir de "Hoje é ..." (confira o dia da semana de cada data), distribua em ciclos de 25 minutos com pausas, inclua as metas ativas e termine com uma tabela dia a dia (dia, assunto, ciclos, tempo). ' +
+          'Se faltarem dados (por exemplo, prazo da prova ou matéria), faça o melhor plano possível e pergunte no fim o que faltou.',
+      );
+    }
 
     if (summary) {
       parts.push(`\n## Resumo da conversa até aqui\n${summary}`);
