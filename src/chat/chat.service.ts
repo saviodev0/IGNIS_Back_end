@@ -12,13 +12,17 @@ import { isValidObjectId, Model, Types } from 'mongoose';
 import { Chat, ChatDocument } from './schemas/chat.schema';
 import { ChatMessage } from './schemas/message.schema';
 import { ChatFile } from './schemas/chat-file.schema';
-import { rankChunks } from './chunk-ranker';
+import { mentionsMaterial, rankChunks } from './chunk-ranker';
 import { FileTextService } from './file-text.service';
 import { FileStorageService } from './file-storage.service';
 import { GroqService, LlmMessage } from './groq.service';
 import { StudentContextService, formatMinutes } from './student-context.service';
 import { IntentRouterService } from './intent-router.service';
 import { DirectAnswerService } from './direct-answer.service';
+
+export type ChatEvent =
+  | { type: 'delta'; content: string }
+  | { type: 'sources'; sources: { file: string; page?: number }[] };
 
 // Controle de custo da IA
 const HISTORY_WINDOW = 10; // últimas mensagens enviadas na íntegra
@@ -81,7 +85,7 @@ export class ChatService {
       this.messages
         .find({ chatId: chat._id })
         .sort({ createdAt: 1, _id: 1 })
-        .select('role content createdAt')
+        .select('role content sources createdAt')
         .lean(),
       this.files.find({ chatId: chat._id }).select('name size charCount createdAt storedAs').lean(),
     ]);
@@ -144,7 +148,8 @@ export class ChatService {
       throw new BadRequestException(`Máximo de ${MAX_FILES_PER_CHAT} arquivos por chat.`);
     }
 
-    const text = await this.fileText.extract(file);
+    const document = await this.fileText.extract(file);
+    const chunks = this.fileText.chunk(document);
     const name = Buffer.from(file.originalname, 'latin1').toString('utf8');
 
     const fileId = new Types.ObjectId();
@@ -157,16 +162,17 @@ export class ChatService {
         userId,
         name,
         size: file.size,
-        charCount: text.length,
+        charCount: document.text.length,
         storedAs,
-        chunks: this.fileText.split(text),
+        chunks: chunks.map((chunk) => chunk.text),
+        chunkPages: chunks.map((chunk) => chunk.page),
       });
     } catch (error) {
       await this.storage.remove(storedAs);
       throw error;
     }
 
-    return { id: fileId, name, size: file.size, charCount: text.length, hasOriginal: true };
+    return { id: fileId, name, size: file.size, charCount: document.text.length, hasOriginal: true };
   }
 
   private async getOwnedFile(userId: string, chatId: string, fileId: string) {
@@ -203,7 +209,9 @@ export class ChatService {
   /** Escolhe os trechos dos arquivos mais relacionados à pergunta. */
   private async relevantChunks(chatId: ChatDocument['_id'], question: string) {
     const files = await this.files.find({ chatId }).lean();
-    const all = files.flatMap((file) => file.chunks.map((text) => ({ file: file.name, text })));
+    const all = files.flatMap((file) =>
+      file.chunks.map((text, index) => ({ file: file.name, page: file.chunkPages?.[index] || 0, text })),
+    );
 
     if (all.length === 0) return [];
 
@@ -211,8 +219,11 @@ export class ChatService {
       (x, y) => all.indexOf(x) - all.indexOf(y),
     );
 
-    // Pergunta genérica ("resuma o arquivo"): usa o começo do material
-    return found.length > 0 ? found : all.slice(0, CONTEXT_CHUNKS);
+    if (found.length > 0) return found;
+
+    // Pergunta genérica sobre o material ("resuma o arquivo"): usa o começo dele.
+    // Pergunta sem relação com o material: não manda trechos (economiza tokens e não mostra fonte falsa).
+    return mentionsMaterial(question) ? all.slice(0, CONTEXT_CHUNKS) : [];
   }
 
   // =========================
@@ -228,7 +239,7 @@ export class ChatService {
     chatId: string,
     content: string,
     signal?: AbortSignal,
-  ): AsyncGenerator<string> {
+  ): AsyncGenerator<ChatEvent> {
     const chat = await this.getOwned(userId, chatId);
 
     // "Estudei 2h": soma ao tempo de estudo deste conteúdo, sem usar a IA
@@ -247,7 +258,7 @@ export class ChatService {
       }
       await chat.save();
 
-      yield answer;
+      yield { type: 'delta', content: answer };
       return;
     }
 
@@ -275,7 +286,7 @@ export class ChatService {
         }
         await chat.save();
 
-        yield answer;
+        yield { type: 'delta', content: answer };
         return;
       }
     }
@@ -334,14 +345,23 @@ export class ChatService {
 
     let answer = '';
 
+    // Arquivos e páginas que foram para a IA; o aluno vê de onde veio a resposta
+    const sources = [
+      ...new Map(
+        chunks.map((chunk) => [`${chunk.file}#${chunk.page ?? 0}`, { file: chunk.file, page: chunk.page || undefined }]),
+      ).values(),
+    ];
+
     try {
+      if (sources.length > 0) yield { type: 'sources', sources };
+
       for await (const piece of this.groq.stream(llmMessages, signal)) {
         answer += piece;
-        yield piece;
+        yield { type: 'delta', content: piece };
       }
     } finally {
       if (answer) {
-        await this.messages.create({ chatId: chat._id, userId, role: 'assistant', content: answer });
+        await this.messages.create({ chatId: chat._id, userId, role: 'assistant', content: answer, sources });
       } else {
         // Sem resposta (erro da IA/cancelado): descarta a pergunta para o aluno poder reenviar
         await userMessage.deleteOne();
@@ -358,7 +378,7 @@ export class ChatService {
   private systemPrompt(
     studentInfo: string,
     summary: string,
-    chunks: { file: string; text: string }[],
+    chunks: { file: string; page?: number; text: string }[],
     planInfo: string | null = null,
     fileNames: string[] = [],
   ): string {
@@ -388,8 +408,8 @@ export class ChatService {
     if (chunks.length > 0) {
       parts.push(
         '\n## Trechos do material enviado pelo aluno\n' +
-          'Priorize estes trechos quando a pergunta for sobre o material; se a resposta não estiver neles, avise e complemente com seu conhecimento geral.\n' +
-          chunks.map((chunk) => `[${chunk.file}]\n${chunk.text}`).join('\n---\n'),
+          'Priorize estes trechos quando a pergunta for sobre o material; se a resposta não estiver neles, avise e complemente com seu conhecimento geral. Quando usar o material, cite a fonte entre parênteses no fim da frase, copiando o nome exato do arquivo e a página, por exemplo (Biologia.pdf, p. 3) — só use arquivos e páginas que aparecem acima.\n' +
+          chunks.map((chunk) => `[${chunk.file}${chunk.page ? `, p. ${chunk.page}` : ''}]\n${chunk.text}`).join('\n---\n'),
       );
     }
 

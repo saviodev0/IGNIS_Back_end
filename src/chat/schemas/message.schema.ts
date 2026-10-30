@@ -17,6 +17,10 @@ export class ChatMessage {
   @Prop({ required: true })
   content!: string;
 
+  // Arquivos e páginas usados na resposta da IA
+  @Prop({ type: [{ file: String, page: Number, _id: false }], default: [] })
+  sources!: { file: string; page?: number }[];
+
   // Respondida direto do banco, sem chamar a IA (não conta no limite diário)
   @Prop({ default: false })
   direct!: boolean;
