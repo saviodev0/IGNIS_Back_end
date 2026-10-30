@@ -51,3 +51,23 @@ describe('IntentRouterService.detectStudyLog', () => {
     expect(router.detectStudyLog(message)).toBe(expected);
   });
 });
+
+describe('IntentRouterService.wantsStudyPlan', () => {
+  const router = new IntentRouterService();
+
+  const cases: [string, boolean][] = [
+    ['Monte um plano de estudo para minha prova de cálculo', true],
+    ['me ajuda a planejar meus estudos da semana', true],
+    ['cria um cronograma de revisão até sexta', true],
+    ['quanto devo estudar por dia para passar?', true],
+    ['como organizar meus estudos?', true],
+    ['Explique o ciclo de Krebs', false],
+    ['resuma o pdf que enviei', false],
+    ['o que é um plano cartesiano?', false],
+    ['quantas horas estudei essa semana?', false],
+  ];
+
+  it.each(cases)('%s', (message, expected) => {
+    expect(router.wantsStudyPlan(message)).toBe(expected);
+  });
+});

@@ -86,6 +86,15 @@ export class IntentRouterService {
     return intents.length > 0 && intents.length <= 3 ? intents : null;
   }
 
+  /** O aluno pediu um plano/cronograma de estudo? Só nesse caso a IA recebe o histórico detalhado. */
+  wantsStudyPlan(message: string): boolean {
+    const text = this.normalize(message);
+
+    return /(plano|planejamento|cronograma|rotina|agenda|roteiro)\b.*\b(estud|revis|prova|materia|conteudo|semana|dias)|\b(monte|montar|crie|criar|faca|fazer|gere|gerar|planeje|planejar|organize|organizar|me ajude a (organizar|planejar))\b.*\b(plano|cronograma|rotina|estudos|revisao)|quanto (devo|preciso) estudar|como (devo )?(me )?organizar (os |meus )?estudos/.test(
+      text,
+    );
+  }
+
   /** Minutos informados pelo aluno ao dizer que estudou ("estudei 2h"), ou null. */
   detectStudyLog(message: string): number | null {
     const text = this.normalize(message);
