@@ -95,6 +95,18 @@ export class ChatService {
     };
   }
 
+  async rename(userId: string, chatId: string, title: string) {
+    const chat = await this.getOwned(userId, chatId);
+    const clean = title.replace(/\s+/g, ' ').trim();
+
+    if (!clean) throw new BadRequestException('Informe um nome para o chat.');
+
+    chat.title = clean;
+    await chat.save();
+
+    return { id: chat._id, title: chat.title };
+  }
+
   async remove(userId: string, chatId: string) {
     const chat = await this.getOwned(userId, chatId);
 

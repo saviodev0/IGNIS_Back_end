@@ -22,6 +22,7 @@ import { ChatService } from './chat.service';
 import { CreateChatDto } from './dto/create-chat.dto';
 import { SendMessageDto } from './dto/send-message.dto';
 import { AddStudyTimeDto } from './dto/add-study-time.dto';
+import { RenameChatDto } from './dto/rename-chat.dto';
 
 @Controller('chats')
 @UseGuards(AuthGuard)
@@ -46,6 +47,11 @@ export class ChatController {
   @Delete(':id')
   remove(@Req() request: any, @Param('id') id: string) {
     return this.chatService.remove(request.user.sub, id);
+  }
+
+  @Patch(':id')
+  rename(@Req() request: any, @Param('id') id: string, @Body() dto: RenameChatDto) {
+    return this.chatService.rename(request.user.sub, id, dto.title);
   }
 
   @Patch(':id/study-time')
