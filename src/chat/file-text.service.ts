@@ -2,9 +2,9 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { PDFParse } from 'pdf-parse';
 import * as mammoth from 'mammoth';
 
+import { splitIntoChunks } from './chunker';
+
 const MAX_CHARS = 500_000;
-const CHUNK_SIZE = 1500;
-const CHUNK_OVERLAP = 200;
 
 export interface ExtractedDocument {
   text: string;
@@ -70,31 +70,20 @@ export class FileTextService {
   /** Divide o documento em trechos; em PDFs cada trecho fica dentro de uma página. */
   chunk(document: ExtractedDocument): TextChunk[] {
     if (document.pages?.length) {
-      return document.pages.flatMap((page) =>
-        this.split(page.text).map((text) => ({ text, page: page.page })),
-      );
+      // O título da seção continua valendo nas páginas seguintes
+      let heading = '';
+
+      return document.pages.flatMap((page) => {
+        const result = splitIntoChunks(page.text, heading);
+        heading = result.heading;
+        return result.chunks.map((text) => ({ text, page: page.page }));
+      });
     }
 
     return this.split(document.text).map((text) => ({ text, page: 0 }));
   }
 
   split(text: string): string[] {
-    const chunks: string[] = [];
-    let start = 0;
-
-    while (start < text.length) {
-      let end = Math.min(start + CHUNK_SIZE, text.length);
-
-      if (end < text.length) {
-        const breakAt = text.lastIndexOf('\n', end);
-        if (breakAt > start + CHUNK_SIZE / 2) end = breakAt;
-      }
-
-      chunks.push(text.slice(start, end).trim());
-      if (end >= text.length) break;
-      start = end - CHUNK_OVERLAP;
-    }
-
-    return chunks.filter(Boolean);
+    return splitIntoChunks(text).chunks;
   }
 }
