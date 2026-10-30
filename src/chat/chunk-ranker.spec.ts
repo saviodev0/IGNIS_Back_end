@@ -1,4 +1,4 @@
-import { mentionsMaterial, rankChunks, stem } from './chunk-ranker';
+import { cosine, fuseRankings, mentionsMaterial, rankChunks, stem } from './chunk-ranker';
 
 const chunks = [
   { text: 'A mitocôndria é a organela responsável pela respiração celular e produção de energia.' },
@@ -38,5 +38,26 @@ describe('mentionsMaterial', () => {
     ['explique a fotossíntese', false],
   ])('%s', (question, expected) => {
     expect(mentionsMaterial(question)).toBe(expected);
+  });
+});
+
+describe('cosine', () => {
+  it('vetores iguais dão 1 e ortogonais dão 0', () => {
+    expect(cosine([1, 0], [1, 0])).toBe(1);
+    expect(cosine([1, 0], [0, 1])).toBe(0);
+  });
+});
+
+describe('fuseRankings', () => {
+  it('quem aparece nas duas listas sobe, e quem aparece só em uma ainda entra', () => {
+    const result = fuseRankings([['a', 'b', 'c'], ['d', 'b', 'e']], 4);
+
+    expect(result[0]).toBe('b');
+    expect(result).toEqual(expect.arrayContaining(['a', 'd']));
+    expect(result).toHaveLength(4);
+  });
+
+  it('com uma lista vazia mantém a outra', () => {
+    expect(fuseRankings([['x', 'y'], []], 5)).toEqual(['x', 'y']);
   });
 });

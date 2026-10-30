@@ -6,6 +6,9 @@
 # Arquivos enviados pelos alunos (ficam só no servidor)
 /arquivos
 
+# Modelo de embeddings baixado na primeira execução
+/modelos
+
 # Logs
 logs
 *.log

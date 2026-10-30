@@ -28,6 +28,10 @@ export class ChatFile {
   @Prop({ type: [String], default: [] })
   chunks!: string[];
 
+  // Vetor de cada trecho para a busca semântica (mesma ordem de `chunks`); preenchido em segundo plano
+  @Prop({ type: [[Number]], default: [] })
+  embeddings!: number[][];
+
   // Página de cada trecho (0 quando o formato não tem páginas, como DOCX); mesma ordem de `chunks`
   @Prop({ type: [Number], default: [] })
   chunkPages!: number[];
