@@ -89,12 +89,20 @@ Environment variables:
 | `API_KEY` (or `GROQ_API_KEY`) | Groq API key |
 | `MONGODB_URL` | MongoDB connection string (defaults to the docker-compose database) |
 | `UPLOADS_DIR` | Where original PDF/DOCX uploads are stored (defaults to `./arquivos`) |
+| `EMBEDDINGS` | Set to `off` to disable semantic search (keyword search only) |
+| `MODELS_DIR` | Where the embedding model is cached (defaults to `./modelos`) |
 
 Uploaded files are kept on the server disk only, as
 `<UPLOADS_DIR>/<userId>/<chatId>/<fileId>.<ext>`. The folder is git-ignored; in
 production mount it on a persistent volume, otherwise redeploys erase it. Only
 the chat owner can download (`GET /chats/:id/files/:fileId`) or delete
 (`DELETE /chats/:id/files/:fileId`) a file.
+
+Search over the uploaded material combines keyword ranking (BM25) with semantic
+search: a small multilingual model (`multilingual-e5-small`) runs inside the API
+and embeds each chunk in the background after the upload. The model (~160 MB) is
+downloaded on first start and needs about 450 MB of RAM; if it cannot load, the
+chat keeps working with keyword search only.
 
 Messages like "quantas horas estudei hoje?" are answered from the database
 without calling the AI, and "estudei 1h30" adds time to the chat.

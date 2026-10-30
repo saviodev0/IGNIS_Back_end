@@ -87,3 +87,27 @@ export function mentionsMaterial(question: string): boolean {
 
   return /\b(arquivo|pdf|docx?|word|documento|material|texto|apostila|resum\w*|capitulo|slides?|anexo|enviei|mandei|conteudo)\b/.test(text);
 }
+
+/** Similaridade entre vetores já normalizados. */
+export function cosine(a: number[], b: number[]): number {
+  let total = 0;
+  for (let i = 0; i < a.length; i++) total += a[i] * b[i];
+  return total;
+}
+
+/**
+ * Junta duas listas ordenadas (palavras-chave e semântica) com Reciprocal Rank Fusion:
+ * quem aparece bem nas duas sobe; quem aparece só numa ainda entra.
+ */
+export function fuseRankings<T>(lists: T[][], limit: number, k = 60): T[] {
+  const scores = new Map<T, number>();
+
+  for (const list of lists) {
+    list.forEach((item, rank) => scores.set(item, (scores.get(item) ?? 0) + 1 / (k + rank + 1)));
+  }
+
+  return [...scores.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, limit)
+    .map(([item]) => item);
+}
