@@ -122,6 +122,12 @@ page. Replies are streamed over SSE as markdown; before the text, an event
 and the sources are saved with the message. Questions unrelated to the material
 send no chunks and show no sources.
 
+Privacy: `DELETE /chats` erases everything the logged-in student stored in the AI
+(chats, messages, files including the originals on disk, and study material) and returns
+the counts. Token counters are kept (they hold no content and back the daily quota).
+The system prompt treats uploaded files as data, never as instructions, and forbids
+revealing its instructions, keys or other students' data.
+
 Usage: every AI call (chat, summaries and study material) records the tokens it used
 per student and day (as reported by Groq, estimated when missing). Past the daily quota the
 API answers `429` with the renewal time (midnight, server timezone); answers computed from the

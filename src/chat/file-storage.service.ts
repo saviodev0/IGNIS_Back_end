@@ -45,6 +45,15 @@ export class FileStorageService {
     );
   }
 
+  /** Apaga a pasta inteira de uploads do usuário. */
+  async removeUser(userId: string) {
+    if (!userId.trim()) return;
+
+    await rm(this.resolveSafe(userId), { recursive: true, force: true }).catch((error) =>
+      this.logger.warn(`Falha ao apagar pasta do usuário: ${error.message}`),
+    );
+  }
+
   // Garante que o caminho continua dentro da pasta de uploads
   private resolveSafe(relative: string) {
     const target = resolve(this.root, relative);
