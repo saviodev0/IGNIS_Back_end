@@ -121,6 +121,13 @@ page. Replies are streamed over SSE as markdown; before the text, an event
 and the sources are saved with the message. Questions unrelated to the material
 send no chunks and show no sources.
 
+Study material: `POST /chats/:id/material` with `type` (`summary`, `flashcards` or
+`quiz`), optional `fileId` and `count` (3 to 20) generates it from the chat's files
+(large files are sampled from start to end), saves it and returns it. Flashcards are
+`{front, back}` and quiz questions are `{question, options[4], answerIndex, explanation}`;
+malformed AI output is rejected with `502` and nothing is saved. `GET /chats/:id/material`
+lists the saved ones and `DELETE /chats/:id/material/:materialId` removes one.
+
 Other behaviours:
 
 - `PATCH /chats/:id` with `{ "title" }` renames a chat (1 to 80 characters).

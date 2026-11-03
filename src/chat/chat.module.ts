@@ -17,6 +17,8 @@ import { DirectAnswerService } from './direct-answer.service';
 import { Chat, ChatSchema } from './schemas/chat.schema';
 import { ChatMessage, ChatMessageSchema } from './schemas/message.schema';
 import { ChatFile, ChatFileSchema } from './schemas/chat-file.schema';
+import { StudyMaterial, StudyMaterialSchema } from './schemas/study-material.schema';
+import { MaterialService } from './material.service';
 
 @Module({
   imports: [
@@ -38,11 +40,13 @@ import { ChatFile, ChatFileSchema } from './schemas/chat-file.schema';
       { name: Chat.name, schema: ChatSchema },
       { name: ChatMessage.name, schema: ChatMessageSchema },
       { name: ChatFile.name, schema: ChatFileSchema },
+      { name: StudyMaterial.name, schema: StudyMaterialSchema },
     ]),
   ],
   controllers: [ChatController],
   providers: [
     ChatService,
+    MaterialService,
     FileTextService,
     FileStorageService,
     EmbeddingService,
