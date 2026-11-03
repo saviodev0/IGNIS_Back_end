@@ -12,6 +12,7 @@ import { isValidObjectId, Model, Types } from 'mongoose';
 import { Chat, ChatDocument } from './schemas/chat.schema';
 import { ChatMessage } from './schemas/message.schema';
 import { ChatFile } from './schemas/chat-file.schema';
+import { StudyMaterial } from './schemas/study-material.schema';
 import { cosine, fuseRankings, mentionsMaterial, rankChunks } from './chunk-ranker';
 import { FileTextService } from './file-text.service';
 import { formatMemory, shouldUseMemory } from './chat-memory';
@@ -45,6 +46,7 @@ export class ChatService {
     @InjectModel(Chat.name) private readonly chats: Model<Chat>,
     @InjectModel(ChatMessage.name) private readonly messages: Model<ChatMessage>,
     @InjectModel(ChatFile.name) private readonly files: Model<ChatFile>,
+    @InjectModel(StudyMaterial.name) private readonly materials: Model<StudyMaterial>,
     private readonly fileText: FileTextService,
     private readonly storage: FileStorageService,
     private readonly embeddings: EmbeddingService,
@@ -124,6 +126,7 @@ export class ChatService {
     await Promise.all([
       this.messages.deleteMany({ chatId: chat._id }),
       this.files.deleteMany({ chatId: chat._id }),
+      this.materials.deleteMany({ chatId: chat._id }),
       this.storage.removeChat(userId, chat._id.toString()),
       chat.deleteOne(),
     ]);

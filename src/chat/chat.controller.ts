@@ -19,6 +19,8 @@ import type { Response } from 'express';
 
 import { AuthGuard } from '../auth/guards/auth.guard';
 import { ChatService } from './chat.service';
+import { MaterialService } from './material.service';
+import { GenerateMaterialDto } from './dto/generate-material.dto';
 import { CreateChatDto } from './dto/create-chat.dto';
 import { SendMessageDto } from './dto/send-message.dto';
 import { AddStudyTimeDto } from './dto/add-study-time.dto';
@@ -27,7 +29,10 @@ import { RenameChatDto } from './dto/rename-chat.dto';
 @Controller('chats')
 @UseGuards(AuthGuard)
 export class ChatController {
-  constructor(private readonly chatService: ChatService) {}
+  constructor(
+    private readonly chatService: ChatService,
+    private readonly materialService: MaterialService,
+  ) {}
 
   @Get()
   list(@Req() request: any) {
@@ -93,6 +98,26 @@ export class ChatController {
   @Delete(':id/files/:fileId')
   removeFile(@Req() request: any, @Param('id') id: string, @Param('fileId') fileId: string) {
     return this.chatService.removeFile(request.user.sub, id, fileId);
+  }
+
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
+  @Post(':id/material')
+  generateMaterial(@Req() request: any, @Param('id') id: string, @Body() dto: GenerateMaterialDto) {
+    return this.materialService.generate(request.user.sub, id, dto);
+  }
+
+  @Get(':id/material')
+  listMaterial(@Req() request: any, @Param('id') id: string) {
+    return this.materialService.list(request.user.sub, id);
+  }
+
+  @Delete(':id/material/:materialId')
+  removeMaterial(
+    @Req() request: any,
+    @Param('id') id: string,
+    @Param('materialId') materialId: string,
+  ) {
+    return this.materialService.remove(request.user.sub, id, materialId);
   }
 
   /**
