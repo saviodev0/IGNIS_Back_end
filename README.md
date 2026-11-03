@@ -99,6 +99,7 @@ Environment variables:
 | `API_KEY` (or `GROQ_API_KEY`) | Groq API key |
 | `MONGODB_URL` | MongoDB connection string (defaults to the docker-compose database) |
 | `UPLOADS_DIR` | Where original PDF/DOCX uploads are stored (defaults to `./arquivos`) |
+| `AI_DAILY_TOKEN_LIMIT` | Daily AI token quota per student (defaults to `200000`; `0` disables the limit) |
 | `EMBEDDINGS` | Set to `off` to disable semantic search (keyword search only) |
 | `MODELS_DIR` | Where the embedding model is cached (defaults to `./modelos`) |
 
@@ -120,6 +121,12 @@ page. Replies are streamed over SSE as markdown; before the text, an event
 `{"type":"sources","sources":[{"file","page"}]}` lists the files and pages used,
 and the sources are saved with the message. Questions unrelated to the material
 send no chunks and show no sources.
+
+Usage: every AI call (chat, summaries and study material) records the tokens it used
+per student and day (as reported by Groq, estimated when missing). Past the daily quota the
+API answers `429` with the renewal time (midnight, server timezone); answers computed from the
+database never use the quota. `GET /chats/usage` returns `used`, `limit`, `remaining` and
+`resetsAt` for today.
 
 Study material: `POST /chats/:id/material` with `type` (`summary`, `flashcards` or
 `quiz`), optional `fileId` and `count` (3 to 20) generates it from the chat's files

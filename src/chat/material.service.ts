@@ -9,6 +9,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { isValidObjectId, Model } from 'mongoose';
 
 import { GroqService } from './groq.service';
+import { UsageService } from './usage.service';
 import { clampCount, MaterialType, parseFlashcards, parseQuiz, sampleChunks } from './material-parser';
 import { Chat } from './schemas/chat.schema';
 import { ChatFile } from './schemas/chat-file.schema';
@@ -29,6 +30,7 @@ export class MaterialService {
     @InjectModel(ChatFile.name) private readonly files: Model<ChatFile>,
     @InjectModel(StudyMaterial.name) private readonly materials: Model<StudyMaterial>,
     private readonly groq: GroqService,
+    private readonly usage: UsageService,
   ) {}
 
   private async getOwnedChat(userId: string, chatId: string) {
@@ -75,6 +77,8 @@ export class MaterialService {
   ) {
     const chat = await this.getOwnedChat(userId, chatId);
 
+    await this.usage.assertWithinLimit(userId);
+
     const files = await this.files
       .find({ chatId: chat._id, ...(dto.fileId ? { _id: dto.fileId } : {}) })
       .sort({ createdAt: 1 })
@@ -96,6 +100,9 @@ export class MaterialService {
         { role: 'user', content: this.prompt(dto.type, count, source) },
       ],
       dto.type === 'summary' ? 1500 : 3000,
+      (tokens) => {
+        this.usage.record(userId, tokens).catch((error) => this.logger.warn(`Falha ao registrar uso: ${error.message}`));
+      },
     );
 
     let content: unknown;

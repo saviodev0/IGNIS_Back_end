@@ -19,6 +19,8 @@ import { ChatMessage, ChatMessageSchema } from './schemas/message.schema';
 import { ChatFile, ChatFileSchema } from './schemas/chat-file.schema';
 import { StudyMaterial, StudyMaterialSchema } from './schemas/study-material.schema';
 import { MaterialService } from './material.service';
+import { UsageService } from './usage.service';
+import { AiUsage, AiUsageSchema } from './schemas/ai-usage.schema';
 
 @Module({
   imports: [
@@ -41,12 +43,14 @@ import { MaterialService } from './material.service';
       { name: ChatMessage.name, schema: ChatMessageSchema },
       { name: ChatFile.name, schema: ChatFileSchema },
       { name: StudyMaterial.name, schema: StudyMaterialSchema },
+      { name: AiUsage.name, schema: AiUsageSchema },
     ]),
   ],
   controllers: [ChatController],
   providers: [
     ChatService,
     MaterialService,
+    UsageService,
     FileTextService,
     FileStorageService,
     EmbeddingService,
