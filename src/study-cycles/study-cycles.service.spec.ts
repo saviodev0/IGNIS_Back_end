@@ -1,3 +1,7 @@
+jest.mock('../prisma/prisma.service', () => ({ PrismaService: class {} }));
+
+import { ConflictException, NotFoundException } from '@nestjs/common';
+
 import { StudyCyclesService } from './study-cycles.service';
 
 describe('StudyCyclesService.history', () => {
@@ -123,5 +127,101 @@ describe('StudyCyclesService.stats streaks', () => {
         longestStreak: 2,
       }),
     );
+  });
+});
+
+
+describe('StudyCyclesService ciclo ativo', () => {
+  const startedAt = new Date(Date.now() - 5 * 60_000);
+  const open = {
+    id: 7,
+    userId: 'user-1',
+    durationMinutes: 25,
+    startedAt,
+    completed: false,
+    completedAt: null,
+    pausedAt: null,
+    pausedSeconds: 0,
+  };
+
+  const build = (studyCycle: Record<string, jest.Mock>) =>
+    new StudyCyclesService({ studyCycle } as any);
+
+  it('start recusa quando já existe um ciclo aberto', async () => {
+    const create = jest.fn();
+    const service = build({ findFirst: jest.fn().mockResolvedValue({ id: 7 }), create });
+
+    await expect(service.start('user-1', 25)).rejects.toBeInstanceOf(ConflictException);
+    expect(create).not.toHaveBeenCalled();
+  });
+
+  it('start cria o ciclo e devolve o estado', async () => {
+    const create = jest.fn().mockResolvedValue(open);
+    const service = build({ findFirst: jest.fn().mockResolvedValue(null), create });
+
+    const result = await service.start('user-1', 25);
+
+    expect(result.status).toBe('running');
+    expect(result.remainingSeconds).toBeGreaterThan(19 * 60);
+  });
+
+  it('active devolve null quando não há ciclo aberto', async () => {
+    const service = build({ findFirst: jest.fn().mockResolvedValue(null) });
+
+    await expect(service.active('user-1')).resolves.toBeNull();
+  });
+
+  it('pause grava o início da pausa', async () => {
+    const update = jest.fn().mockImplementation(({ data }) => Promise.resolve({ ...open, ...data }));
+    const service = build({ findFirst: jest.fn().mockResolvedValue(open), update });
+
+    const result = await service.pause(7, 'user-1');
+
+    expect(update.mock.calls[0][0].data.pausedAt).toBeInstanceOf(Date);
+    expect(result.status).toBe('paused');
+  });
+
+  it('pause em ciclo já pausado não muda nada', async () => {
+    const update = jest.fn();
+    const paused = { ...open, pausedAt: new Date() };
+    const service = build({ findFirst: jest.fn().mockResolvedValue(paused), update });
+
+    expect((await service.pause(7, 'user-1')).status).toBe('paused');
+    expect(update).not.toHaveBeenCalled();
+  });
+
+  it('resume soma o tempo parado e limpa a pausa', async () => {
+    const pausedAt = new Date(Date.now() - 120_000);
+    const updateMany = jest.fn().mockResolvedValue({ count: 1 });
+    const findUniqueOrThrow = jest.fn().mockResolvedValue({ ...open, pausedAt: null, pausedSeconds: 120 });
+    const service = build({
+      findFirst: jest.fn().mockResolvedValue({ ...open, pausedAt }),
+      updateMany,
+      findUniqueOrThrow,
+    });
+
+    const result = await service.resume(7, 'user-1');
+    const call = updateMany.mock.calls[0][0];
+
+    expect(call.where).toEqual({ id: 7, pausedAt });
+    expect(call.data.pausedAt).toBeNull();
+    expect(call.data.pausedSeconds.increment).toBeGreaterThanOrEqual(119);
+    expect(result.status).toBe('running');
+  });
+
+  it('resume em ciclo que não está pausado não muda nada', async () => {
+    const updateMany = jest.fn();
+    const service = build({ findFirst: jest.fn().mockResolvedValue(open), updateMany });
+
+    expect((await service.resume(7, 'user-1')).status).toBe('running');
+    expect(updateMany).not.toHaveBeenCalled();
+  });
+
+  it('pause e resume validam dono e conclusão', async () => {
+    const missing = build({ findFirst: jest.fn().mockResolvedValue(null) });
+    await expect(missing.pause(7, 'outro')).rejects.toBeInstanceOf(NotFoundException);
+
+    const done = build({ findFirst: jest.fn().mockResolvedValue({ ...open, completed: true }) });
+    await expect(done.resume(7, 'user-1')).rejects.toBeInstanceOf(ConflictException);
   });
 });

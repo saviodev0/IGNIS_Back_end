@@ -39,6 +39,11 @@ model StudyCycle {
 
   completed Boolean @default(false)
 
+  // Pausa: quando está pausado, `pausedAt` guarda o início da pausa;
+  // `pausedSeconds` soma o tempo de pausas anteriores (não conta como estudo)
+  pausedAt      DateTime?
+  pausedSeconds Int       @default(0)
+
   ignisEarned Int @default(0)
 
   userId String

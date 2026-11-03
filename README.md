@@ -57,6 +57,16 @@ $ npm run test:e2e
 $ npm run test:cov
 ```
 
+## Study cycles
+
+A student has at most one unfinished cycle at a time (`POST /study-cycles/start`
+returns `409` while one exists). `GET /study-cycles/active` returns it, or an empty
+body when there is none, and `POST /study-cycles/:id/pause` and `/resume` stop and
+restart its clock. Every cycle response includes `status` (`running`, `paused` or
+`completed`), `remainingSeconds` and `ignisReward`. Time spent paused does not
+count as study time, and pausing an already paused cycle (or resuming a running
+one) changes nothing. Apply the migration with `npx prisma migrate deploy`.
+
 ## Progress API
 
 `GET /users/me/stats` returns lifetime study totals and the current IGNIS balance,
