@@ -40,7 +40,8 @@ export function buildSystemPrompt({
         '\n\nO aluno pediu um plano de estudo. Monte um plano realista usando SOMENTE os números acima: ' +
         'respeite a média que ele já consegue estudar (aumente no máximo 20%), priorize os dias da semana em que ele rende mais, ' +
         'use as datas reais a partir de "Hoje é ..." (confira o dia da semana de cada data), distribua em ciclos de 25 minutos com pausas, inclua as metas ativas e termine com uma tabela dia a dia (dia, assunto, ciclos, tempo). ' +
-        'Se faltarem dados (por exemplo, prazo da prova ou matéria), faça o melhor plano possível e pergunte no fim o que faltou.',
+        'Se faltarem dados (por exemplo, prazo da prova ou matéria), faça o melhor plano possível e pergunte no fim o que faltou. ' +
+        'Por fim, sugira ao aluno transformar o plano em meta no app escrevendo exatamente um comando como "criar meta semanal de 10h" (use o total de horas do plano e o tipo diária, semanal ou mensal que fizer sentido).',
     );
   }
 
