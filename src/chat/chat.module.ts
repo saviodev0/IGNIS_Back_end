@@ -20,6 +20,7 @@ import { ChatFile, ChatFileSchema } from './schemas/chat-file.schema';
 import { StudyMaterial, StudyMaterialSchema } from './schemas/study-material.schema';
 import { MaterialService } from './material.service';
 import { UsageService } from './usage.service';
+import { PrivacyService } from './privacy.service';
 import { AiUsage, AiUsageSchema } from './schemas/ai-usage.schema';
 
 @Module({
@@ -51,6 +52,7 @@ import { AiUsage, AiUsageSchema } from './schemas/ai-usage.schema';
     ChatService,
     MaterialService,
     UsageService,
+    PrivacyService,
     FileTextService,
     FileStorageService,
     EmbeddingService,

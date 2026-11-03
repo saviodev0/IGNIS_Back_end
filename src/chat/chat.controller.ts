@@ -21,6 +21,7 @@ import { AuthGuard } from '../auth/guards/auth.guard';
 import { ChatService } from './chat.service';
 import { MaterialService } from './material.service';
 import { UsageService } from './usage.service';
+import { PrivacyService } from './privacy.service';
 import { GenerateMaterialDto } from './dto/generate-material.dto';
 import { CreateChatDto } from './dto/create-chat.dto';
 import { SendMessageDto } from './dto/send-message.dto';
@@ -34,6 +35,7 @@ export class ChatController {
     private readonly chatService: ChatService,
     private readonly materialService: MaterialService,
     private readonly usageService: UsageService,
+    private readonly privacyService: PrivacyService,
   ) {}
 
   @Get()
@@ -44,6 +46,13 @@ export class ChatController {
   @Post()
   create(@Req() request: any, @Body() dto: CreateChatDto) {
     return this.chatService.create(request.user.sub, dto.title);
+  }
+
+  // Apaga TODOS os dados de IA do usuário logado (conversas, arquivos e materiais)
+  @Throttle({ default: { limit: 3, ttl: 60_000 } })
+  @Delete()
+  removeAll(@Req() request: any) {
+    return this.privacyService.removeAllData(request.user.sub);
   }
 
   // Precisa vir antes de `:id`, senão "usage" seria lido como id de chat

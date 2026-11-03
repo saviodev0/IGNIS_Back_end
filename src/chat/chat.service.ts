@@ -17,6 +17,7 @@ import { cosine, fuseRankings, mentionsMaterial, rankChunks } from './chunk-rank
 import { FileTextService } from './file-text.service';
 import { formatMemory, shouldUseMemory } from './chat-memory';
 import { EmbeddingService } from './embedding.service';
+import { buildSystemPrompt } from './system-prompt';
 import { UsageService } from './usage.service';
 import { TokenUsage } from './usage';
 import { FileStorageService } from './file-storage.service';
@@ -433,7 +434,7 @@ export class ChatService {
     }
 
     const llmMessages: LlmMessage[] = [
-      { role: 'system', content: this.systemPrompt(studentInfo, chat.summary, chunks, planInfo, fileNames, memory) },
+      { role: 'system', content: buildSystemPrompt({ studentInfo, summary: chat.summary, chunks, planInfo, fileNames, memory }) },
       ...previous.map((m) => ({ role: m.role, content: m.content })),
       { role: 'user', content },
     ];
@@ -468,55 +469,6 @@ export class ChatService {
         this.logger.warn(`Falha ao resumir chat ${chat._id}: ${error.message}`),
       );
     }
-  }
-
-  private systemPrompt(
-    studentInfo: string,
-    summary: string,
-    chunks: { file: string; page?: number; text: string }[],
-    planInfo: string | null = null,
-    fileNames: string[] = [],
-    memory: string | null = null,
-  ): string {
-    const parts = [
-      'Você é o assistente de estudos do IGNIS, um app de ciclos de estudo (pomodoro) com pontos, metas e sequências.',
-      'Responda sempre em português do Brasil, de forma clara, didática e motivadora, sem enrolação.',
-      'Formate em markdown simples: títulos com "##", **negrito**, listas com "-" ou numeradas, parágrafos curtos, tabelas quando comparar itens e blocos de código só para código de verdade. Não use LaTeX nem HTML; escreva fórmulas em texto (ex.: 6 CO2 + 6 H2O -> C6H12O6 + 6 O2).',
-      'Use os dados do aluno quando ajudar (ex.: sugerir ciclos, comentar a sequência ou metas), sem inventar números.',
-      `\n## Dados do aluno\n${studentInfo}`,
-    ];
-
-    if (planInfo) {
-      parts.push(
-        `\n## Histórico recente de estudo (para o plano)\n${planInfo}` +
-          (fileNames.length ? `\nMateriais enviados neste chat: ${fileNames.join(', ')}` : '') +
-          '\n\nO aluno pediu um plano de estudo. Monte um plano realista usando SOMENTE os números acima: ' +
-          'respeite a média que ele já consegue estudar (aumente no máximo 20%), priorize os dias da semana em que ele rende mais, ' +
-          'use as datas reais a partir de "Hoje é ..." (confira o dia da semana de cada data), distribua em ciclos de 25 minutos com pausas, inclua as metas ativas e termine com uma tabela dia a dia (dia, assunto, ciclos, tempo). ' +
-          'Se faltarem dados (por exemplo, prazo da prova ou matéria), faça o melhor plano possível e pergunte no fim o que faltou.',
-      );
-    }
-
-    if (memory) {
-      parts.push(
-        `\n## Outros estudos do aluno (conversas anteriores)\n${memory}\n` +
-          'Use isto só para dar continuidade quando fizer sentido (ex.: "você já estudou X"); não cite se não for relevante.',
-      );
-    }
-
-    if (summary) {
-      parts.push(`\n## Resumo da conversa até aqui\n${summary}`);
-    }
-
-    if (chunks.length > 0) {
-      parts.push(
-        '\n## Trechos do material enviado pelo aluno\n' +
-          'Priorize estes trechos quando a pergunta for sobre o material; se a resposta não estiver neles, avise e complemente com seu conhecimento geral. Quando usar o material, cite a fonte entre parênteses no fim da frase, copiando o nome exato do arquivo e a página, por exemplo (Biologia.pdf, p. 3) — só use arquivos e páginas que aparecem acima.\n' +
-          chunks.map((chunk) => `[${chunk.file}${chunk.page ? `, p. ${chunk.page}` : ''}]\n${chunk.text}`).join('\n---\n'),
-      );
-    }
-
-    return parts.join('\n');
   }
 
   /** Callback que soma os tokens de uma chamada à IA na cota do aluno. */
