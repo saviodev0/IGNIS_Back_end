@@ -17,6 +17,8 @@ import { cosine, fuseRankings, mentionsMaterial, rankChunks } from './chunk-rank
 import { FileTextService } from './file-text.service';
 import { formatMemory, shouldUseMemory } from './chat-memory';
 import { EmbeddingService } from './embedding.service';
+import { UsageService } from './usage.service';
+import { TokenUsage } from './usage';
 import { FileStorageService } from './file-storage.service';
 import { GroqService, LlmMessage } from './groq.service';
 import { StudentContextService, formatMinutes } from './student-context.service';
@@ -50,6 +52,7 @@ export class ChatService {
     private readonly fileText: FileTextService,
     private readonly storage: FileStorageService,
     private readonly embeddings: EmbeddingService,
+    private readonly usage: UsageService,
     private readonly groq: GroqService,
     private readonly studentContext: StudentContextService,
     private readonly intentRouter: IntentRouterService,
@@ -391,6 +394,9 @@ export class ChatService {
       );
     }
 
+    // Cota diária de tokens (as respostas diretas do banco acima não passam por aqui nem gastam cota)
+    await this.usage.assertWithinLimit(userId);
+
     const previous = await this.messages
       .find({ chatId: chat._id })
       .sort({ createdAt: -1, _id: -1 })
@@ -444,7 +450,7 @@ export class ChatService {
     try {
       if (sources.length > 0) yield { type: 'sources', sources };
 
-      for await (const piece of this.groq.stream(llmMessages, signal)) {
+      for await (const piece of this.groq.stream(llmMessages, signal, this.trackUsage(userId))) {
         answer += piece;
         yield { type: 'delta', content: piece };
       }
@@ -458,7 +464,7 @@ export class ChatService {
 
       await chat.save();
 
-      this.summarizeIfNeeded(chat._id.toString()).catch((error) =>
+      this.summarizeIfNeeded(chat._id.toString(), userId).catch((error) =>
         this.logger.warn(`Falha ao resumir chat ${chat._id}: ${error.message}`),
       );
     }
@@ -513,8 +519,15 @@ export class ChatService {
     return parts.join('\n');
   }
 
+  /** Callback que soma os tokens de uma chamada à IA na cota do aluno. */
+  private trackUsage(userId: string) {
+    return (tokens: TokenUsage) => {
+      this.usage.record(userId, tokens).catch((error) => this.logger.warn(`Falha ao registrar uso: ${error.message}`));
+    };
+  }
+
   /** Mantém o custo baixo: mensagens fora da janela viram um resumo curto. */
-  private async summarizeIfNeeded(chatId: string) {
+  private async summarizeIfNeeded(chatId: string, userId: string) {
     const chat = await this.chats.findById(chatId);
     if (!chat) return;
 
@@ -545,7 +558,7 @@ export class ChatService {
         role: 'user',
         content: `${chat.summary ? `Resumo anterior:\n${chat.summary}\n\n` : ''}Novas mensagens:\n${transcript}`,
       },
-    ]);
+    ], 800, this.trackUsage(userId));
 
     if (!summary) return;
 

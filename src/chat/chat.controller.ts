@@ -20,6 +20,7 @@ import type { Response } from 'express';
 import { AuthGuard } from '../auth/guards/auth.guard';
 import { ChatService } from './chat.service';
 import { MaterialService } from './material.service';
+import { UsageService } from './usage.service';
 import { GenerateMaterialDto } from './dto/generate-material.dto';
 import { CreateChatDto } from './dto/create-chat.dto';
 import { SendMessageDto } from './dto/send-message.dto';
@@ -32,6 +33,7 @@ export class ChatController {
   constructor(
     private readonly chatService: ChatService,
     private readonly materialService: MaterialService,
+    private readonly usageService: UsageService,
   ) {}
 
   @Get()
@@ -42,6 +44,12 @@ export class ChatController {
   @Post()
   create(@Req() request: any, @Body() dto: CreateChatDto) {
     return this.chatService.create(request.user.sub, dto.title);
+  }
+
+  // Precisa vir antes de `:id`, senão "usage" seria lido como id de chat
+  @Get('usage')
+  usage(@Req() request: any) {
+    return this.usageService.today(request.user.sub);
   }
 
   @Get(':id')
