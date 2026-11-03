@@ -100,6 +100,7 @@ Environment variables:
 | `MONGODB_URL` | MongoDB connection string (defaults to the docker-compose database) |
 | `UPLOADS_DIR` | Where original PDF/DOCX uploads are stored (defaults to `./arquivos`) |
 | `AI_DAILY_TOKEN_LIMIT` | Daily AI token quota per student (defaults to `200000`; `0` disables the limit) |
+| `OCR` | Set to `off` to disable text recognition for scanned PDFs |
 | `EMBEDDINGS` | Set to `off` to disable semantic search (keyword search only) |
 | `MODELS_DIR` | Where the embedding model is cached (defaults to `./modelos`) |
 
@@ -114,6 +115,11 @@ search: a small multilingual model (`multilingual-e5-small`) runs inside the API
 and embeds each chunk in the background after the upload. The model (~160 MB) is
 downloaded on first start and needs about 450 MB of RAM; if it cannot load, the
 chat keeps working with keyword search only.
+
+Scanned PDFs (pages that are only images) are read by OCR in Portuguese (`tesseract.js`,
+running inside the API, about half a second per page). The limit is 30 pages and 60 seconds
+per file, with a clear error beyond that; page numbers are kept, so sources stay correct. The
+language data is cached under `MODELS_DIR/ocr` after the first use.
 
 Uploads are split by structure (headings and paragraphs, ~1100 characters, the
 section title is repeated in continuation chunks) and PDF chunks remember their

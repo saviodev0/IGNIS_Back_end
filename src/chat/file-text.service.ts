@@ -1,8 +1,10 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { PDFParse } from 'pdf-parse';
 import * as mammoth from 'mammoth';
 
 import { splitIntoChunks } from './chunker';
+import { needsOcr, OcrLimitError } from './ocr';
+import { OcrService } from './ocr.service';
 
 const MAX_CHARS = 500_000;
 
@@ -22,6 +24,10 @@ const clean = (text: string) =>
 
 @Injectable()
 export class FileTextService {
+  private readonly logger = new Logger(FileTextService.name);
+
+  constructor(private readonly ocr: OcrService) {}
+
   async extract(file: Express.Multer.File): Promise<ExtractedDocument> {
     const name = file.originalname.toLowerCase();
     const buffer = file.buffer;
@@ -33,9 +39,17 @@ export class FileTextService {
       const parser = new PDFParse({ data: new Uint8Array(buffer) });
       try {
         const result = await parser.getText();
-        text = result.text;
         pages = result.pages.map((p) => ({ page: p.num, text: clean(p.text) })).filter((p) => p.text);
-      } catch {
+
+        // PDF escaneado (só imagens): lê o texto das páginas por OCR
+        if (needsOcr(pages) && this.ocr.isEnabled) {
+          pages = await this.readScanned(parser, result.total);
+        }
+
+        // Só o texto das páginas: o `text` do parser traz marcadores "-- 1 of 3 --"
+        text = pages.map((p) => p.text).join('\n\n');
+      } catch (error) {
+        if (error instanceof BadRequestException) throw error;
         throw new BadRequestException('Não foi possível ler este PDF.');
       } finally {
         await parser.destroy();
@@ -65,6 +79,20 @@ export class FileTextService {
     }
 
     return { text: text.slice(0, MAX_CHARS), pages };
+  }
+
+  private async readScanned(parser: PDFParse, total: number) {
+    try {
+      const recognized = await this.ocr.recognizePdf(parser, total);
+
+      return recognized.map((p) => ({ page: p.page, text: clean(p.text) })).filter((p) => p.text.length >= 10);
+    } catch (error: any) {
+      if (error instanceof OcrLimitError) throw new BadRequestException(error.message);
+
+      this.logger.warn(`OCR falhou: ${error.message}`);
+
+      return []; // cai na mensagem padrão de "PDF sem texto"
+    }
   }
 
   /** Divide o documento em trechos; em PDFs cada trecho fica dentro de uma página. */
