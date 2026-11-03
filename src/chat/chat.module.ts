@@ -21,6 +21,7 @@ import { StudyMaterial, StudyMaterialSchema } from './schemas/study-material.sch
 import { MaterialService } from './material.service';
 import { UsageService } from './usage.service';
 import { PrivacyService } from './privacy.service';
+import { OcrService } from './ocr.service';
 import { AiUsage, AiUsageSchema } from './schemas/ai-usage.schema';
 
 @Module({
@@ -53,6 +54,7 @@ import { AiUsage, AiUsageSchema } from './schemas/ai-usage.schema';
     MaterialService,
     UsageService,
     PrivacyService,
+    OcrService,
     FileTextService,
     FileStorageService,
     EmbeddingService,
