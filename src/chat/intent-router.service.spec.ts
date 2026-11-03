@@ -45,6 +45,9 @@ describe('IntentRouterService.detectStudyLog', () => {
     ['quanto devo estudar 2h por dia', null],
     ['explique o ciclo de Krebs em 2 horas', null],
     ['estudei 30 horas', null],
+    ['adicione uma meta diária de 2h', null],
+    ['registre uma meta semanal de 10h', null],
+    ['some 2h', 120],
   ];
 
   it.each(cases)('%s', (message, expected) => {

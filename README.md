@@ -143,6 +143,12 @@ lists the saved ones and `DELETE /chats/:id/material/:materialId` removes one.
 
 Other behaviours:
 
+- Goals by chat: messages such as "criar meta semanal de 10h", "quero uma meta diária
+  de 1h30" or "nova meta mensal de 40 horas" create a daily, weekly or monthly goal
+  without calling the AI, and the chat confirms type, value and end date. If the
+  student already has an active goal of that type, the value is invalid or the type is
+  missing, it explains why and creates nothing. Questions about goals still go to the
+  normal answers. Study plans end by suggesting the exact command.
 - `PATCH /chats/:id` with `{ "title" }` renames a chat (1 to 80 characters).
 - Requests for a study plan ("monte um plano de estudos") also send the recent
   study history, goals and the calendar of the next days to the AI.

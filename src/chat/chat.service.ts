@@ -18,6 +18,8 @@ import { FileTextService } from './file-text.service';
 import { formatMemory, shouldUseMemory } from './chat-memory';
 import { EmbeddingService } from './embedding.service';
 import { buildSystemPrompt } from './system-prompt';
+import { GoalsService } from '../goals/goals.service';
+import { GoalCommand, GoalType, goalLabel, parseGoalCommand } from './goal-command';
 import { UsageService } from './usage.service';
 import { TokenUsage } from './usage';
 import { FileStorageService } from './file-storage.service';
@@ -54,6 +56,7 @@ export class ChatService {
     private readonly storage: FileStorageService,
     private readonly embeddings: EmbeddingService,
     private readonly usage: UsageService,
+    private readonly goals: GoalsService,
     private readonly groq: GroqService,
     private readonly studentContext: StudentContextService,
     private readonly intentRouter: IntentRouterService,
@@ -329,6 +332,24 @@ export class ChatService {
   ): AsyncGenerator<ChatEvent> {
     const chat = await this.getOwned(userId, chatId);
 
+    // "Criar meta semanal de 10h": cria a meta no app, sem usar a IA
+    const goalCommand = parseGoalCommand(content);
+
+    if (goalCommand) {
+      const answer = await this.createGoalFromChat(userId, goalCommand);
+
+      await this.messages.create({ chatId: chat._id, userId, role: 'user', content, direct: true });
+      await this.messages.create({ chatId: chat._id, userId, role: 'assistant', content: answer, direct: true });
+
+      if (chat.title === 'Novo chat') {
+        chat.title = content.replace(/\s+/g, ' ').slice(0, 50);
+      }
+      await chat.save();
+
+      yield { type: 'delta', content: answer };
+      return;
+    }
+
     // "Estudei 2h": soma ao tempo de estudo deste conteúdo, sem usar a IA
     const loggedMinutes = this.intentRouter.detectStudyLog(content);
 
@@ -468,6 +489,27 @@ export class ChatService {
       this.summarizeIfNeeded(chat._id.toString(), userId).catch((error) =>
         this.logger.warn(`Falha ao resumir chat ${chat._id}: ${error.message}`),
       );
+    }
+  }
+
+  private async createGoalFromChat(userId: string, command: GoalCommand): Promise<string> {
+    if (command.kind === 'invalid') return `Não criei a meta. ${command.reason}`;
+
+    try {
+      const goal = await this.goals.create(userId, command.type, command.minutes);
+      const { label, per } = goalLabel(command.type);
+      const until = new Date(goal.endDate).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+
+      return `Meta ${label} criada: ${formatMinutes(command.minutes)} ${per}, valendo até ${until}. Você acompanha o progresso na tela de metas.`;
+    } catch (error: any) {
+      this.logger.warn(`Não foi possível criar a meta pelo chat: ${error.message}`);
+
+      const reason =
+        error instanceof BadRequestException
+          ? error.message.replace(/\b(daily|weekly|monthly)\b/gi, (type: string) => goalLabel(type.toUpperCase() as GoalType).label)
+          : 'Tente de novo em instantes.';
+
+      return `Não criei a meta. ${reason}`;
     }
   }
 

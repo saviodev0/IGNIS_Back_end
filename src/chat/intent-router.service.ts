@@ -101,6 +101,8 @@ export class IntentRouterService {
 
     if (!text || text.length > MAX_LENGTH || text.includes('?')) return null;
     if (/\b(quant|quanto|quantas|quantos|devo|deveria|posso|como|quero saber)\b/.test(text)) return null;
+    // "adicione uma meta de 2h" é pedido de meta, não horas estudadas
+    if (/\bmeta\b/.test(text)) return null;
     if (!LOG_VERB.test(text)) return null;
 
     const match = LOG_DURATION.exec(text.replace(/(\d),(\d)/g, '$1.$2'));
