@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 
 import { PrismaService } from '../prisma/prisma.service';
+import { describeCycle } from './cycle-state';
 import { StudyHistoryQueryDto } from './dto/study-history-query.dto';
 
 @Injectable()
@@ -14,13 +15,86 @@ export class StudyCyclesService {
 
 
   async start(userId: string, durationMinutes: number) {
-    return this.prisma.studyCycle.create({
+    const active = await this.prisma.studyCycle.findFirst({
+      where: { userId, completed: false },
+      select: { id: true },
+    });
+
+    if (active) {
+      throw new ConflictException('Já existe um ciclo em andamento');
+    }
+
+    const cycle = await this.prisma.studyCycle.create({
       data: {
         userId,
         durationMinutes,
         startedAt: new Date(),
       },
     });
+
+    return describeCycle(cycle);
+  }
+
+  /** Ciclo ainda não concluído do aluno (em andamento ou pausado), ou null. */
+  async active(userId: string) {
+    const cycle = await this.prisma.studyCycle.findFirst({
+      where: { userId, completed: false },
+      orderBy: { startedAt: 'desc' },
+    });
+
+    return cycle ? describeCycle(cycle) : null;
+  }
+
+  private async findOpenCycle(cycleId: number, userId: string) {
+    const cycle = await this.prisma.studyCycle.findFirst({
+      where: { id: cycleId, userId },
+    });
+
+    if (!cycle) {
+      throw new NotFoundException('Ciclo não encontrado');
+    }
+
+    if (cycle.completed) {
+      throw new ConflictException('Este ciclo já foi concluído');
+    }
+
+    return cycle;
+  }
+
+  async pause(cycleId: number, userId: string) {
+    const cycle = await this.findOpenCycle(cycleId, userId);
+
+    if (cycle.pausedAt) {
+      return describeCycle(cycle); // já está pausado
+    }
+
+    const paused = await this.prisma.studyCycle.update({
+      where: { id: cycle.id },
+      data: { pausedAt: new Date() },
+    });
+
+    return describeCycle(paused);
+  }
+
+  async resume(cycleId: number, userId: string) {
+    const cycle = await this.findOpenCycle(cycleId, userId);
+
+    if (!cycle.pausedAt) {
+      return describeCycle(cycle); // já está em andamento
+    }
+
+    const now = new Date();
+    const pausedFor = Math.max(0, Math.floor((now.getTime() - cycle.pausedAt.getTime()) / 1000));
+
+    // Só aplica se ainda estiver pausado na mesma pausa (evita somar duas vezes em cliques repetidos)
+    await this.prisma.studyCycle.updateMany({
+      where: { id: cycle.id, pausedAt: cycle.pausedAt },
+      data: { pausedAt: null, pausedSeconds: { increment: pausedFor } },
+    });
+
+    const resumed = await this.prisma.studyCycle.findUniqueOrThrow({ where: { id: cycle.id } });
+
+    return describeCycle(resumed);
   }
     
 
