@@ -57,6 +57,16 @@ $ npm run test:e2e
 $ npm run test:cov
 ```
 
+## Study cycles
+
+A student has at most one unfinished cycle at a time (`POST /study-cycles/start`
+returns `409` while one exists). `GET /study-cycles/active` returns it, or an empty
+body when there is none, and `POST /study-cycles/:id/pause` and `/resume` stop and
+restart its clock. Every cycle response includes `status` (`running`, `paused` or
+`completed`), `remainingSeconds` and `ignisReward`. Time spent paused does not
+count as study time, and pausing an already paused cycle (or resuming a running
+one) changes nothing. Apply the migration with `npx prisma migrate deploy`.
+
 ## Progress API
 
 `GET /users/me/stats` returns lifetime study totals and the current IGNIS balance,
@@ -75,6 +85,92 @@ totals include completed sessions only.
 `GET /goals` returns progress calculated from the authenticated user's completed
 cycles within each goal's date range. `GET /achievements` includes the persisted
 `unlockedAt` timestamp, or `null` for locked achievements.
+
+## AI chat
+
+Authenticated students chat with an AI about their study material (`/chats`).
+Chats, messages and the text extracted from uploads live in MongoDB; the AI
+provider (Groq) keeps no history.
+
+Environment variables:
+
+| Variable | Purpose |
+| --- | --- |
+| `API_KEY` (or `GROQ_API_KEY`) | Groq API key |
+| `MONGODB_URL` | MongoDB connection string (defaults to the docker-compose database) |
+| `UPLOADS_DIR` | Where original PDF/DOCX uploads are stored (defaults to `./arquivos`) |
+| `AI_DAILY_TOKEN_LIMIT` | Daily AI token quota per student (defaults to `200000`; `0` disables the limit) |
+| `OCR` | Set to `off` to disable text recognition for scanned PDFs |
+| `EMBEDDINGS` | Set to `off` to disable semantic search (keyword search only) |
+| `MODELS_DIR` | Where the embedding model is cached (defaults to `./modelos`) |
+
+Uploaded files are kept on the server disk only, as
+`<UPLOADS_DIR>/<userId>/<chatId>/<fileId>.<ext>`. The folder is git-ignored; in
+production mount it on a persistent volume, otherwise redeploys erase it. Only
+the chat owner can download (`GET /chats/:id/files/:fileId`) or delete
+(`DELETE /chats/:id/files/:fileId`) a file.
+
+Search over the uploaded material combines keyword ranking (BM25) with semantic
+search: a small multilingual model (`multilingual-e5-small`) runs inside the API
+and embeds each chunk in the background after the upload. The model (~160 MB) is
+downloaded on first start and needs about 450 MB of RAM; if it cannot load, the
+chat keeps working with keyword search only.
+
+Scanned PDFs (pages that are only images) are read by OCR in Portuguese (`tesseract.js`,
+running inside the API, about half a second per page). The limit is 30 pages and 60 seconds
+per file, with a clear error beyond that; page numbers are kept, so sources stay correct. The
+language data is cached under `MODELS_DIR/ocr` after the first use.
+
+Uploads are split by structure (headings and paragraphs, ~1100 characters, the
+section title is repeated in continuation chunks) and PDF chunks remember their
+page. Replies are streamed over SSE as markdown; before the text, an event
+`{"type":"sources","sources":[{"file","page"}]}` lists the files and pages used,
+and the sources are saved with the message. Questions unrelated to the material
+send no chunks and show no sources.
+
+Privacy: `DELETE /chats` erases everything the logged-in student stored in the AI
+(chats, messages, files including the originals on disk, and study material) and returns
+the counts. Token counters are kept (they hold no content and back the daily quota).
+The system prompt treats uploaded files as data, never as instructions, and forbids
+revealing its instructions, keys or other students' data.
+
+Usage: every AI call (chat, summaries and study material) records the tokens it used
+per student and day (as reported by Groq, estimated when missing). Past the daily quota the
+API answers `429` with the renewal time (midnight, server timezone); answers computed from the
+database never use the quota. `GET /chats/usage` returns `used`, `limit`, `remaining` and
+`resetsAt` for today.
+
+Study material: `POST /chats/:id/material` with `type` (`summary`, `flashcards` or
+`quiz`), optional `fileId` and `count` (3 to 20) generates it from the chat's files
+(large files are sampled from start to end), saves it and returns it. Flashcards are
+`{front, back}` and quiz questions are `{question, options[4], answerIndex, explanation}`;
+malformed AI output is rejected with `502` and nothing is saved. `GET /chats/:id/material`
+lists the saved ones and `DELETE /chats/:id/material/:materialId` removes one.
+
+Other behaviours:
+
+- Goals by chat: messages such as "criar meta semanal de 10h", "quero uma meta diária
+  de 1h30" or "nova meta mensal de 40 horas" create a daily, weekly or monthly goal
+  without calling the AI, and the chat confirms type, value and end date. If the
+  student already has an active goal of that type, the value is invalid or the type is
+  missing, it explains why and creates nothing. Questions about goals still go to the
+  normal answers. Study plans end by suggesting the exact command.
+- `PATCH /chats/:id` with `{ "title" }` renames a chat (1 to 80 characters).
+- Requests for a study plan ("monte um plano de estudos") also send the recent
+  study history, goals and the calendar of the next days to the AI.
+- At the start of a conversation, or when the student mentions earlier studies
+  ("lembra do que estudamos"), the AI receives title, study time, files and
+  summary of the student's last 4 chats. Chats of other users are never included.
+
+Messages like "quantas horas estudei hoje?" are answered from the database
+without calling the AI, and "estudei 1h30" adds time to the chat.
+
+## Rate limiting
+
+Requests are limited per IP (`@nestjs/throttler`): 120/min in general, 10/min on
+login, 5/min on register, 20/min on chat messages and 10/min on uploads. Exceeding
+a limit returns `429`. Behind a reverse proxy or load balancer set `TRUST_PROXY=1`,
+otherwise every request looks like it comes from the proxy's IP.
 
 ## IGNIS intent router
 

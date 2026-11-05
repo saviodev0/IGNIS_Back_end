@@ -7,6 +7,7 @@ import {
   Query,
   UseGuards,
   Param,
+  ParseIntPipe,
 } from '@nestjs/common';
 
 import { StudyCyclesService } from './study-cycles.service';
@@ -30,6 +31,24 @@ export class StudyCyclesController {
       request.user.sub,
       durationMinutes,
     );
+  }
+
+  @Get('active')
+  @UseGuards(AuthGuard)
+  async active(@Req() request: any) {
+    return this.studyCyclesService.active(request.user.sub);
+  }
+
+  @Post(':id/pause')
+  @UseGuards(AuthGuard)
+  async pause(@Req() request: any, @Param('id', ParseIntPipe) id: number) {
+    return this.studyCyclesService.pause(id, request.user.sub);
+  }
+
+  @Post(':id/resume')
+  @UseGuards(AuthGuard)
+  async resume(@Req() request: any, @Param('id', ParseIntPipe) id: number) {
+    return this.studyCyclesService.resume(id, request.user.sub);
   }
 
   @Post(':id/complete')

@@ -9,10 +9,12 @@ import {
   UseGuards,
 } from '@nestjs/common';
 
+import { Throttle } from '@nestjs/throttler';
 import type { Response } from 'express';
 
 import { AuthService } from './auth.service';
 import { AuthGuard } from './guards/auth.guard';
+import { CreateUserDto } from '../users/dto/create-user.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -20,27 +22,13 @@ export class AuthController {
     private readonly authService: AuthService,
   ) {}
 
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
   @Post('register')
-  async register(
-    @Body('name') name: string,
-    @Body('age') age: number,
-    @Body('email') email: string,
-    @Body('isStudent') isStudent: boolean,
-    @Body('whichCourse') whichCourse: string,
-    @Body('phone') phone: string,
-    @Body('password') password: string,
-  ) {
-    return this.authService.register(
-      name,
-      Number(age),
-      email,
-      isStudent,
-      whichCourse,
-      phone,
-      password,
-    );
+  async register(@Body() createUserDto: CreateUserDto) {
+    return this.authService.register(createUserDto);
   }
 
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
   @Post('login')
   async login(
     @Body('email') email: string,

@@ -15,6 +15,7 @@ import { AuthModule } from '../auth/auth.module';
   ],
   controllers: [GoalsController],
   providers: [GoalsService],
+  exports: [GoalsService],
 })
 export class GoalsModule {}
 
