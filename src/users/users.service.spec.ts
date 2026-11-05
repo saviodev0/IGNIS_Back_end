@@ -52,4 +52,50 @@ describe('UsersService.ranking', () => {
       select: { id: true, name: true, ignisPoints: true },
     });
   });
+
+  it('calculates the current user position outside the page when points are tied', async () => {
+    const findMany = jest.fn().mockResolvedValue([
+      { id: 'user-1', name: 'Ana', ignisPoints: 300 },
+      { id: 'user-a', name: 'Bia', ignisPoints: 250 },
+    ]);
+    const count = jest
+      .fn()
+      .mockResolvedValueOnce(6)
+      .mockResolvedValueOnce(2);
+    const findUnique = jest.fn().mockResolvedValue({
+      id: 'user-z',
+      name: 'Caio',
+      ignisPoints: 250,
+    });
+
+    const service = new UsersService({
+      user: { findMany, count, findUnique },
+    } as any);
+
+    await expect(
+      service.ranking('user-z', { page: 1, limit: 2 }),
+    ).resolves.toMatchObject({
+      currentUser: {
+        id: 'user-z',
+        name: 'Caio',
+        ignisPoints: 250,
+        position: 3,
+      },
+      pagination: {
+        page: 1,
+        limit: 2,
+        total: 6,
+        totalPages: 3,
+      },
+    });
+
+    expect(count).toHaveBeenLastCalledWith({
+      where: {
+        OR: [
+          { ignisPoints: { gt: 250 } },
+          { ignisPoints: 250, id: { lt: 'user-z' } },
+        ],
+      },
+    });
+  });
 });
