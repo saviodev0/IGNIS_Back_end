@@ -1,0 +1,88 @@
+# Produção em uma máquina só: Caddy (HTTPS) + site + API + Postgres + Mongo.
+# Espera os dois repositórios lado a lado:  IGNIS_Back_end/  e  Ignis_FrontEnd/
+# Uso: cp .env.example .env  (preencha)  &&  docker compose -f docker-compose.prod.yml up -d --build
+
+name: ignis
+
+services:
+  postgres:
+    image: postgres:17
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ignis
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?defina POSTGRES_PASSWORD no .env}
+      POSTGRES_DB: ignis
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ignis -d ignis"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  mongo:
+    image: mongo:8.0
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ignis
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD:?defina MONGO_PASSWORD no .env}
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      NODE_ENV: production
+      TRUST_PROXY: "1"
+      DATABASE_URL: postgresql://ignis:${POSTGRES_PASSWORD}@postgres:5432/ignis?schema=public
+      MONGODB_URL: mongodb://ignis:${MONGO_PASSWORD}@mongo:27017/ignis?authSource=admin
+      CORS_ORIGINS: https://${APP_HOST:?defina APP_HOST no .env}
+    volumes:
+      - uploads:/data/arquivos
+      - models:/data/modelos
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mongo:
+        condition: service_healthy
+
+  web:
+    build:
+      context: ../../Ignis_FrontEnd
+      args:
+        EXPO_PUBLIC_API_URL: https://${API_HOST:?defina API_HOST no .env}
+    restart: unless-stopped
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "${HTTP_PORT:-80}:80"
+      - "${HTTPS_PORT:-443}:443"
+    environment:
+      APP_HOST: ${APP_HOST}
+      API_HOST: ${API_HOST}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - web
+      - api
+
+volumes:
+  postgres_data:
+  mongo_data:
+  uploads:
+  models:
+  caddy_data:
+  caddy_config:
