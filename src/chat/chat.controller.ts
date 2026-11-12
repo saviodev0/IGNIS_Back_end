@@ -20,9 +20,11 @@ import type { Response } from 'express';
 import { AuthGuard } from '../auth/guards/auth.guard';
 import { ChatService } from './chat.service';
 import { MaterialService } from './material.service';
+import { CycleTitleService } from './cycle-title.service';
 import { UsageService } from './usage.service';
 import { PrivacyService } from './privacy.service';
 import { GenerateMaterialDto } from './dto/generate-material.dto';
+import { SuggestCycleTitleDto } from './dto/suggest-cycle-title.dto';
 import { CreateChatDto } from './dto/create-chat.dto';
 import { SendMessageDto } from './dto/send-message.dto';
 import { AddStudyTimeDto } from './dto/add-study-time.dto';
@@ -34,6 +36,7 @@ export class ChatController {
   constructor(
     private readonly chatService: ChatService,
     private readonly materialService: MaterialService,
+    private readonly cycleTitleService: CycleTitleService,
     private readonly usageService: UsageService,
     private readonly privacyService: PrivacyService,
   ) {}
@@ -53,6 +56,13 @@ export class ChatController {
   @Delete()
   removeAll(@Req() request: any) {
     return this.privacyService.removeAllData(request.user.sub);
+  }
+
+  // Sugere o título de um ciclo de estudo a partir de uma conversa (a mais recente, se não informar)
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  @Post('cycle-title')
+  suggestCycleTitle(@Req() request: any, @Body() dto: SuggestCycleTitleDto) {
+    return this.cycleTitleService.suggest(request.user.sub, dto.chatId);
   }
 
   // Precisa vir antes de `:id`, senão "usage" seria lido como id de chat
