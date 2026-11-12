@@ -19,6 +19,7 @@ import { ChatMessage, ChatMessageSchema } from './schemas/message.schema';
 import { ChatFile, ChatFileSchema } from './schemas/chat-file.schema';
 import { StudyMaterial, StudyMaterialSchema } from './schemas/study-material.schema';
 import { MaterialService } from './material.service';
+import { CycleTitleService } from './cycle-title.service';
 import { UsageService } from './usage.service';
 import { PrivacyService } from './privacy.service';
 import { OcrService } from './ocr.service';
@@ -52,6 +53,7 @@ import { AiUsage, AiUsageSchema } from './schemas/ai-usage.schema';
   providers: [
     ChatService,
     MaterialService,
+    CycleTitleService,
     UsageService,
     PrivacyService,
     OcrService,

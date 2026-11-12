@@ -145,6 +145,12 @@ API answers `429` with the renewal time (midnight, server timezone); answers com
 database never use the quota. `GET /chats/usage` returns `used`, `limit`, `remaining` and
 `resetsAt` for today.
 
+Cycle titles: `POST /chats/cycle-title` (optional `chatId`, default the most recent chat)
+suggests a short title for a study cycle from the chat's name, files, summary and last
+questions, using the cheaper model. It counts toward the daily quota, answers `404` when the
+student has no chat and `400` when the chat is empty. The student can edit the result before
+saving it with `PATCH /study-cycles/:id/title`.
+
 Study material: `POST /chats/:id/material` with `type` (`summary`, `flashcards` or
 `quiz`), optional `fileId` and `count` (3 to 20) generates it from the chat's files
 (large files are sampled from start to end), saves it and returns it. Flashcards are
