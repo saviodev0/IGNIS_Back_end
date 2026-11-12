@@ -1,4 +1,16 @@
+// O Prisma gerado é ESM e não carrega no Jest; a classe só precisa existir para o Nest ler o tipo
+jest.mock('../prisma/prisma.service', () => ({ PrismaService: class PrismaService {} }));
+
+import { PrismaService } from '../prisma/prisma.service';
 import { UsersService } from './users.service';
+
+describe('UsersService injeção de dependência', () => {
+  it('declara o PrismaService como valor (import type faz o Nest não achar o provider)', () => {
+    const types = Reflect.getMetadata('design:paramtypes', UsersService);
+
+    expect(types[0]).toBe(PrismaService);
+  });
+});
 
 describe('UsersService.ranking', () => {
   it('returns a paginated ranking and the current user position', async () => {
