@@ -67,6 +67,11 @@ restart its clock. Every cycle response includes `status` (`running`, `paused` o
 count as study time, and pausing an already paused cycle (or resuming a running
 one) changes nothing. Apply the migration with `npx prisma migrate deploy`.
 
+A cycle can have an optional title of up to 80 characters: send `title` in
+`POST /study-cycles/start`, or change it later (also on completed cycles) with
+`PATCH /study-cycles/:id/title`. Extra spaces are trimmed and an empty title removes
+the name. `GET /study-cycles/history` returns each cycle's `title` and `pausedSeconds`.
+
 ## Progress API
 
 `GET /users/me/stats` returns lifetime study totals and the current IGNIS balance,
