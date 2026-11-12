@@ -33,6 +33,9 @@ model User {
 model StudyCycle {
   id Int @id @default(autoincrement())
 
+  // Nome opcional do ciclo (ex.: "Revisar mitocôndria"), até 80 caracteres
+  title String?
+
   durationMinutes Int
   startedAt       DateTime
   completedAt     DateTime?

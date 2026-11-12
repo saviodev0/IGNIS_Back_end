@@ -7,6 +7,7 @@ import {
 
 import { PrismaService } from '../prisma/prisma.service';
 import { describeCycle } from './cycle-state';
+import { normalizeCycleTitle } from './cycle-title';
 import { StudyHistoryQueryDto } from './dto/study-history-query.dto';
 
 @Injectable()
@@ -14,7 +15,9 @@ export class StudyCyclesService {
   constructor(private readonly prisma: PrismaService) {}
 
 
-  async start(userId: string, durationMinutes: number) {
+  async start(userId: string, durationMinutes: number, title?: unknown) {
+    const cleanTitle = normalizeCycleTitle(title);
+
     const active = await this.prisma.studyCycle.findFirst({
       where: { userId, completed: false },
       select: { id: true },
@@ -28,6 +31,7 @@ export class StudyCyclesService {
       data: {
         userId,
         durationMinutes,
+        title: cleanTitle,
         startedAt: new Date(),
       },
     });
@@ -43,6 +47,27 @@ export class StudyCyclesService {
     });
 
     return cycle ? describeCycle(cycle) : null;
+  }
+
+  /** Renomeia um ciclo do aluno (em andamento ou concluído). Título vazio remove o nome. */
+  async rename(cycleId: number, userId: string, title: unknown) {
+    const cleanTitle = normalizeCycleTitle(title);
+
+    const cycle = await this.prisma.studyCycle.findFirst({
+      where: { id: cycleId, userId },
+      select: { id: true },
+    });
+
+    if (!cycle) {
+      throw new NotFoundException('Ciclo não encontrado');
+    }
+
+    const updated = await this.prisma.studyCycle.update({
+      where: { id: cycle.id },
+      data: { title: cleanTitle },
+    });
+
+    return describeCycle(updated);
   }
 
   private async findOpenCycle(cycleId: number, userId: string) {
@@ -129,9 +154,11 @@ export class StudyCyclesService {
         take: limit,
         select: {
           id: true,
+          title: true,
           durationMinutes: true,
           startedAt: true,
           completedAt: true,
+          pausedSeconds: true,
           ignisEarned: true,
         },
       }),

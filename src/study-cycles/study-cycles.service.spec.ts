@@ -1,6 +1,6 @@
 jest.mock('../prisma/prisma.service', () => ({ PrismaService: class {} }));
 
-import { ConflictException, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
 
 import { StudyCyclesService } from './study-cycles.service';
 
@@ -223,5 +223,111 @@ describe('StudyCyclesService ciclo ativo', () => {
 
     const done = build({ findFirst: jest.fn().mockResolvedValue({ ...open, completed: true }) });
     await expect(done.resume(7, 'user-1')).rejects.toBeInstanceOf(ConflictException);
+  });
+});
+
+describe('StudyCyclesService título do ciclo', () => {
+  const row = {
+    id: 9,
+    userId: 'user-1',
+    durationMinutes: 25,
+    startedAt: new Date(),
+    completed: false,
+    completedAt: null,
+    pausedAt: null,
+    pausedSeconds: 0,
+  };
+
+  it('start grava o título já limpo', async () => {
+    const create = jest.fn().mockImplementation(({ data }) => Promise.resolve({ ...row, ...data }));
+    const service = new StudyCyclesService({
+      studyCycle: { findFirst: jest.fn().mockResolvedValue(null), create },
+    } as any);
+
+    const cycle: any = await service.start('user-1', 25, '  Revisar   mitocôndria ');
+
+    expect(create.mock.calls[0][0].data.title).toBe('Revisar mitocôndria');
+    expect(cycle.title).toBe('Revisar mitocôndria');
+  });
+
+  it('start sem título grava null', async () => {
+    const create = jest.fn().mockImplementation(({ data }) => Promise.resolve({ ...row, ...data }));
+    const service = new StudyCyclesService({
+      studyCycle: { findFirst: jest.fn().mockResolvedValue(null), create },
+    } as any);
+
+    await service.start('user-1', 25);
+    await service.start('user-1', 25, '   ');
+
+    expect(create.mock.calls[0][0].data.title).toBeNull();
+    expect(create.mock.calls[1][0].data.title).toBeNull();
+  });
+
+  it('start recusa título grande demais sem criar o ciclo', async () => {
+    const create = jest.fn();
+    const service = new StudyCyclesService({
+      studyCycle: { findFirst: jest.fn().mockResolvedValue(null), create },
+    } as any);
+
+    await expect(service.start('user-1', 25, 'a'.repeat(81))).rejects.toBeInstanceOf(BadRequestException);
+    expect(create).not.toHaveBeenCalled();
+  });
+
+  it('rename troca o título de um ciclo do aluno, inclusive concluído', async () => {
+    const update = jest.fn().mockImplementation(({ data }) =>
+      Promise.resolve({ ...row, completed: true, completedAt: new Date(), ...data }),
+    );
+    const findFirst = jest.fn().mockResolvedValue({ id: 9 });
+    const service = new StudyCyclesService({ studyCycle: { findFirst, update } } as any);
+
+    const cycle: any = await service.rename(9, 'user-1', ' Prova de bio ');
+
+    expect(findFirst).toHaveBeenCalledWith(expect.objectContaining({ where: { id: 9, userId: 'user-1' } }));
+    expect(update).toHaveBeenCalledWith({ where: { id: 9 }, data: { title: 'Prova de bio' } });
+    expect(cycle.title).toBe('Prova de bio');
+  });
+
+  it('rename com título vazio remove o nome', async () => {
+    const update = jest.fn().mockResolvedValue(row);
+    const service = new StudyCyclesService({
+      studyCycle: { findFirst: jest.fn().mockResolvedValue({ id: 9 }), update },
+    } as any);
+
+    await service.rename(9, 'user-1', '');
+
+    expect(update).toHaveBeenCalledWith({ where: { id: 9 }, data: { title: null } });
+  });
+
+  it('rename de ciclo de outro aluno devolve 404 e não altera nada', async () => {
+    const update = jest.fn();
+    const service = new StudyCyclesService({
+      studyCycle: { findFirst: jest.fn().mockResolvedValue(null), update },
+    } as any);
+
+    await expect(service.rename(9, 'outro', 'x')).rejects.toBeInstanceOf(NotFoundException);
+    expect(update).not.toHaveBeenCalled();
+  });
+
+  it('rename recusa título inválido antes de consultar o banco', async () => {
+    const findFirst = jest.fn();
+    const service = new StudyCyclesService({ studyCycle: { findFirst } } as any);
+
+    await expect(service.rename(9, 'user-1', 42)).rejects.toBeInstanceOf(BadRequestException);
+    expect(findFirst).not.toHaveBeenCalled();
+  });
+
+  it('o histórico traz título e tempo pausado de cada ciclo', async () => {
+    const findMany = jest.fn().mockResolvedValue([]);
+    const service = new StudyCyclesService({
+      studyCycle: {
+        findMany,
+        count: jest.fn().mockResolvedValue(0),
+        aggregate: jest.fn().mockResolvedValue({ _sum: {}, _avg: {} }),
+      },
+    } as any);
+
+    await service.history('user-1');
+
+    expect(findMany.mock.calls[0][0].select).toMatchObject({ title: true, pausedSeconds: true });
   });
 });

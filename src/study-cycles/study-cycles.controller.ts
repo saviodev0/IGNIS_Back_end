@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Post,
+  Patch,
   Get,
   Req,
   Query,
@@ -26,10 +27,12 @@ export class StudyCyclesController {
   async start(
     @Req() request: any,
     @Body('durationMinutes') durationMinutes: number,
+    @Body('title') title?: unknown,
   ) {
     return this.studyCyclesService.start(
       request.user.sub,
       durationMinutes,
+      title,
     );
   }
 
@@ -49,6 +52,16 @@ export class StudyCyclesController {
   @UseGuards(AuthGuard)
   async resume(@Req() request: any, @Param('id', ParseIntPipe) id: number) {
     return this.studyCyclesService.resume(id, request.user.sub);
+  }
+
+  @Patch(':id/title')
+  @UseGuards(AuthGuard)
+  async rename(
+    @Req() request: any,
+    @Param('id', ParseIntPipe) id: number,
+    @Body('title') title?: unknown,
+  ) {
+    return this.studyCyclesService.rename(id, request.user.sub, title);
   }
 
   @Post(':id/complete')
