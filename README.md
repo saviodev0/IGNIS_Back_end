@@ -102,6 +102,22 @@ Environment variables:
 | `AI_DAILY_TOKEN_LIMIT` | Daily AI token quota per student (defaults to `200000`; `0` disables the limit) |
 | `OCR` | Set to `off` to disable text recognition for scanned PDFs |
 | `EMBEDDINGS` | Set to `off` to disable semantic search (keyword search only) |
+
+## Production configuration
+
+With `NODE_ENV=production` the API refuses to start unless `DATABASE_URL`, `MONGODB_URL`,
+`CORS_ORIGINS` and a strong `JWT_SECRET` (32+ characters, not the development one) are set,
+and it logs warnings for a missing `GROQ_API_KEY`/`TRUST_PROXY` or a cookie without `Secure`.
+
+| Variable | Purpose |
+| --- | --- |
+| `NODE_ENV` | `production` turns on the checks above and the `Secure` login cookie |
+| `CORS_ORIGINS` | Front-end origins allowed by CORS, comma separated (defaults to `http://localhost:8081`) |
+| `TRUST_PROXY` | Number of proxies in front of the API (e.g. `1`), so rate limits use the real client IP |
+| `COOKIE_SECURE` | `true`/`false` overrides the `Secure` flag (default: on in production) |
+| `COOKIE_SAMESITE` | `lax` (default), `strict` or `none` |
+| `COOKIE_DOMAIN` | Optional, e.g. `.ignis.com`, to share the login cookie between subdomains |
+| `PORT` | HTTP port (defaults to `3000`) |
 | `MODELS_DIR` | Where the embedding model is cached (defaults to `./modelos`) |
 
 Uploaded files are kept on the server disk only, as

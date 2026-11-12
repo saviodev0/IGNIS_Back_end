@@ -15,6 +15,7 @@ import type { Response } from 'express';
 import { AuthService } from './auth.service';
 import { AuthGuard } from './guards/auth.guard';
 import { CreateUserDto } from '../users/dto/create-user.dto';
+import { authCookieOptions } from '../config/env';
 
 @Controller('auth')
 export class AuthController {
@@ -41,9 +42,7 @@ export class AuthController {
     );
 
     response.cookie('ignis_token', result.accessToken, {
-      httpOnly: true,
-      secure: false,
-      sameSite: 'lax',
+      ...authCookieOptions(),
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
@@ -62,7 +61,7 @@ export class AuthController {
   logout(
     @Res({ passthrough: true }) response: Response,
   ) {
-    response.clearCookie('ignis_token');
+    response.clearCookie('ignis_token', authCookieOptions());
 
     return {
       message: 'Logout realizado com sucesso',

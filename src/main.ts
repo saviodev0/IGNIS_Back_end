@@ -1,11 +1,22 @@
 import { NestFactory } from '@nestjs/core';
 import type { NestExpressApplication } from '@nestjs/platform-express';
-import { ValidationPipe } from '@nestjs/common';
+import { Logger, ValidationPipe } from '@nestjs/common';
 import cookieParser from 'cookie-parser';
 
 import { AppModule } from './app.module';
+import { checkProductionEnv, parseOrigins } from './config/env';
+
+const logger = new Logger('Bootstrap');
 
 async function bootstrap() {
+  // Em produção, não sobe com configuração faltando ou insegura
+  const { errors, warnings } = checkProductionEnv();
+  warnings.forEach((warning) => logger.warn(warning));
+  if (errors.length) {
+    errors.forEach((error) => logger.error(error));
+    process.exit(1);
+  }
+
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
   
@@ -26,9 +37,12 @@ async function bootstrap() {
   );
 
   app.enableCors({
-  origin: 'http://localhost:8081',
-  credentials: true,
-});
+    origin: parseOrigins(process.env.CORS_ORIGINS),
+    credentials: true,
+  });
+
+  // Deixa o Docker parar o container com SIGTERM sem cortar requisições nem conexões dos bancos
+  app.enableShutdownHooks();
 
   await app.listen(process.env.PORT ?? 3000);
 }
