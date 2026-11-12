@@ -1,0 +1,14 @@
+node_modules
+dist
+generated
+arquivos
+modelos
+coverage
+.git
+.github
+.env
+.env.*
+*.log
+deploy
+docs
+test

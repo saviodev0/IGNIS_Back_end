@@ -1,0 +1,11 @@
+# HTTPS automático (Let's Encrypt) para os dois endereços definidos no .env
+{$APP_HOST} {
+	reverse_proxy web:80
+}
+
+{$API_HOST} {
+	# Sem buffer: a resposta do chat chega aos poucos (SSE)
+	reverse_proxy api:3000 {
+		flush_interval -1
+	}
+}

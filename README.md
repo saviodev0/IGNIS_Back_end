@@ -103,6 +103,13 @@ Environment variables:
 | `OCR` | Set to `off` to disable text recognition for scanned PDFs |
 | `EMBEDDINGS` | Set to `off` to disable semantic search (keyword search only) |
 
+## Deploying
+
+`docs/DEPLOY.md` (in Portuguese) is the step-by-step guide to run everything on one Linux
+server with Docker Compose: `deploy/docker-compose.prod.yml` starts Caddy (automatic HTTPS),
+the static site, this API, PostgreSQL and MongoDB; `deploy/backup.sh` backs up both
+databases and the uploaded files. The API image applies pending Prisma migrations on start.
+
 ## Production configuration
 
 With `NODE_ENV=production` the API refuses to start unless `DATABASE_URL`, `MONGODB_URL`,
