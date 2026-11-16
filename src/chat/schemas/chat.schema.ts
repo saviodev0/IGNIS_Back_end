@@ -26,3 +26,4 @@ export class Chat {
 
 export const ChatSchema = SchemaFactory.createForClass(Chat);
 ChatSchema.index({ userId: 1, updatedAt: -1 });
+ChatSchema.index({ userId: 1, title: 'text' }, { default_language: 'none', name: 'busca_titulos' });
