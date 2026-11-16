@@ -113,15 +113,15 @@ Environment variables:
 `npm run eval:search` measures how well the material search finds the right passage. It needs
 no Groq key (only the search runs) and uses the same code as the chat (`src/chat/search.ts`).
 
-- `eval/search/docs/` – 3 sample documents (biology, history, physics), loaded as the passages of one chat.
-- `eval/search/perguntas.json` – 48 questions: literal and paraphrased ones with the expected passage,
+- `eval/search/docs/` – 4 sample documents (biology, history, physics, chemistry), loaded as the passages of one chat.
+- `eval/search/perguntas.json` – 63 questions: literal and paraphrased ones with the expected passage,
   unrelated ones (some on the same subject but absent from the material) and generic ones ("summarize the file").
 - The report compares keyword (BM25), semantic and hybrid search: hit at 1st place, hit among the 4 passages
   sent to the AI, false positives (unrelated question that still gets passages), and a sweep of the
-  semantic threshold (`SEMANTIC_MIN`, currently `0.805`).
+  semantic threshold (`SEMANTIC_MIN`, currently `0.83`).
 - Flags: `-- --detalhes` lists every question, `-- --sem-embeddings` runs keyword search only (no model download).
 
-When you change the chunker, the ranking or the threshold, run it before and after and compare.
+The questions are split into `ajuste` (used to choose the thresholds) and `prova` (never used for tuning, kept as an independent check). When you change the chunker, the ranking or the thresholds, run it before and after and compare.
 
 ## Deploying
 

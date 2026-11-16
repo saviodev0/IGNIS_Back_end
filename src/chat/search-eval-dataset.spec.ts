@@ -8,7 +8,7 @@ const pasta = join(__dirname, '..', '..', 'eval', 'search');
 const perguntas: { tipo: string; pergunta: string; esperado: string | null }[] = JSON.parse(
   readFileSync(join(pasta, 'perguntas.json'), 'utf8'),
 );
-const docs = ['biologia-celula', 'historia-era-vargas', 'fisica-mecanica'];
+const docs = ['biologia-celula', 'historia-era-vargas', 'fisica-mecanica', 'quimica-geral'];
 const trechos = docs.flatMap((doc) => splitIntoChunks(readFileSync(join(pasta, 'docs', `${doc}.txt`), 'utf8')).chunks);
 
 describe('conjunto de avaliação da busca', () => {
@@ -19,9 +19,9 @@ describe('conjunto de avaliação da busca', () => {
     }
   });
 
-  it('usa 3 documentos com vários trechos', () => {
-    expect(docs).toHaveLength(3);
-    expect(trechos.length).toBeGreaterThanOrEqual(15);
+  it('usa 4 documentos com vários trechos', () => {
+    expect(docs).toHaveLength(4);
+    expect(trechos.length).toBeGreaterThanOrEqual(25);
   });
 
   it('toda resposta esperada existe em algum trecho', () => {

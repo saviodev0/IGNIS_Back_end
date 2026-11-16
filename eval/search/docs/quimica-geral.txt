@@ -1,0 +1,31 @@
+CAPÍTULO 1 – ÁTOMOS E TABELA PERIÓDICA
+
+1.1 Modelos atômicos
+Dalton imaginou o átomo como uma esfera maciça e indivisível. Thomson descobriu o elétron e propôs o modelo do pudim de passas. O experimento de Rutherford, que bombardeou uma folha de ouro com partículas alfa, mostrou que o átomo tem um núcleo pequeno, denso e positivo, com os elétrons ao redor. Bohr completou o modelo ao propor que os elétrons ocupam camadas com energias definidas.
+
+1.2 A tabela periódica
+Os elementos estão organizados em ordem crescente de número atômico, que é a quantidade de prótons no núcleo. As colunas são chamadas de grupos ou famílias, e as linhas, de períodos. Elementos do mesmo grupo têm o mesmo número de elétrons na camada de valência, por isso apresentam propriedades químicas parecidas. Os gases nobres, do grupo 18, são muito estáveis e quase não reagem.
+
+CAPÍTULO 2 – LIGAÇÕES QUÍMICAS
+
+2.1 Ligação iônica
+A ligação iônica ocorre entre um metal e um ametal, com transferência de elétrons: o metal vira cátion e o ametal vira ânion. Os compostos iônicos, como o cloreto de sódio, têm pontos de fusão altos e só conduzem corrente elétrica quando fundidos ou dissolvidos em água, porque os íons ficam livres para se mover.
+
+2.2 Ligação covalente e metálica
+Na ligação covalente os átomos compartilham pares de elétrons, e ela é típica entre ametais, como na molécula de água. Na ligação metálica os elétrons de valência formam um mar de elétrons que se move livremente entre os cátions. Isso explica a condutividade elétrica dos metais, o brilho e também a maleabilidade e a ductilidade, que permitem transformá-los em lâminas e fios.
+
+CAPÍTULO 3 – ÁCIDOS, BASES E pH
+
+3.1 Escala de pH
+A escala de pH mede a acidez de uma solução, de 0 a 14. A água pura tem pH igual a 7, valor neutro. Soluções com pH menor que 7 são ácidas, como o suco de limão e o vinagre, e as com pH maior que 7 são básicas, como a água sanitária. Cada unidade de pH representa uma variação de dez vezes na concentração de íons H+.
+
+CAPÍTULO 4 – CÁLCULOS E REAÇÕES
+
+4.1 Mol e massa molar
+O mol é a unidade da quantidade de matéria e corresponde à constante de Avogadro, 6,02 × 10²³ entidades. A massa molar é a massa de um mol, expressa em g/mol. Uma molécula de água tem massa molar de 18 g/mol, pois soma 2 átomos de hidrogênio com 1 de oxigênio.
+
+4.2 Conservação da massa
+A lei de Lavoisier afirma que, em um sistema fechado, a massa total dos reagentes é igual à massa total dos produtos. Por isso toda equação química precisa ser balanceada, com o mesmo número de átomos de cada elemento dos dois lados da seta.
+
+4.3 Termoquímica
+Reações exotérmicas liberam calor para o ambiente, como a combustão, e a variação de entalpia é negativa. As reações endotérmicas absorvem calor do ambiente, como a fotossíntese e o derretimento do gelo, e a variação de entalpia é positiva. A lei de Hess diz que a variação de entalpia total depende só dos estados inicial e final, não do caminho percorrido.

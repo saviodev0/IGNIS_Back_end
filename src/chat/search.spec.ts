@@ -1,4 +1,4 @@
-import { CONTEXT_CHUNKS, SEMANTIC_MIN, keywordSearch, rankedSearch, searchChunks, semanticSearch } from './search';
+import { CONTEXT_CHUNKS, KEYWORD_MIN_COVERAGE, SEMANTIC_MIN, keywordSearch, rankedSearch, searchChunks, semanticSearch } from './search';
 
 const chunk = (text: string, vector?: number[]) => ({ text, vector });
 
@@ -50,7 +50,26 @@ describe('search', () => {
     expect(searchChunks([], 'qualquer coisa', null)).toEqual([]);
   });
 
-  it('o limiar padrão é o usado em produção', () => {
-    expect(SEMANTIC_MIN).toBe(0.805);
+  it('uma palavra genérica sozinha não traz trecho quando o resto da pergunta não aparece no material', () => {
+    const material = [
+      chunk('Em 3 segundos o carro acelera até a velocidade máxima na pista.'),
+      chunk('A mitocôndria produz ATP durante a respiração celular aeróbica.'),
+      chunk('O planeta gira em torno do Sol numa órbita elíptica.'),
+    ];
+    const pergunta = 'Quem foi Dom Pedro durante o Segundo Reinado em segundos';
+    expect(keywordSearch(material, pergunta, KEYWORD_MIN_COVERAGE)).toEqual([]);
+    expect(keywordSearch(material, 'carro acelera em segundos', KEYWORD_MIN_COVERAGE)).toEqual([material[0]]);
+  });
+
+  it('o filtro de cobertura só vale com busca semântica; sem vetor da pergunta mantém todas as palavras-chave', () => {
+    const material = [chunk('Em 3 segundos o carro acelera.', [1, 0]), chunk('A mitocôndria produz ATP.', [0, 1])];
+    const pergunta = 'Quem foi Dom Pedro durante o Segundo Reinado em segundos';
+    expect(rankedSearch(material, pergunta, null)).toEqual([material[0]]);
+    expect(rankedSearch(material, pergunta, [0, 0])).toEqual([]);
+  });
+
+  it('os limiares padrão são os medidos pelo eval', () => {
+    expect(SEMANTIC_MIN).toBe(0.83);
+    expect(KEYWORD_MIN_COVERAGE).toBe(0.3);
   });
 });

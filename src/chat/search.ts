@@ -2,17 +2,23 @@ import { cosine, fuseRankings, mentionsMaterial, rankChunks } from './chunk-rank
 
 export const CONTEXT_CHUNKS = 4; // trechos de arquivo enviados por pergunta
 export const SEARCH_POOL = 8; // candidatos de cada busca (palavras-chave e semântica) antes de juntar
-// Similaridade mínima (modelo e5-small, medida em testes): perguntas relacionadas ficam em 0,81–0,88 e sem relação em 0,77–0,81
-export const SEMANTIC_MIN = 0.805;
+// Similaridade mínima (modelo e5-small). Medida com `npm run eval:search`: perguntas relacionadas ficam em 0,84–0,92
+// e sem relação em 0,77–0,85; em 0,83 não se perde nenhum acerto e caem os falsos positivos (acima de 0,84 já perde).
+export const SEMANTIC_MIN = 0.83;
+// Fração do peso das palavras da pergunta que o trecho precisa conter para entrar pela busca por palavras-chave
+// (0,25 a 0,40 deram o mesmo resultado no eval; 0,30 fica no meio dessa faixa). Só vale quando a busca semântica está
+// disponível para cobrir as perguntas com outras palavras: sem ela (modelo ainda carregando ou desligado), o filtro
+// derrubaria o acerto das perguntas parafraseadas de 92% para 60% no eval.
+export const KEYWORD_MIN_COVERAGE = 0.3;
 
 export interface SearchableChunk {
   text: string;
   vector?: number[];
 }
 
-/** Busca por palavras-chave (BM25): só devolve trechos com alguma palavra em comum. */
-export function keywordSearch<T extends SearchableChunk>(all: T[], question: string): T[] {
-  return rankChunks(all, question, SEARCH_POOL);
+/** Busca por palavras-chave (BM25): só devolve trechos com alguma palavra em comum (e, se pedido, com cobertura mínima). */
+export function keywordSearch<T extends SearchableChunk>(all: T[], question: string, minCoverage = 0): T[] {
+  return rankChunks(all, question, SEARCH_POOL, minCoverage);
 }
 
 /** Busca semântica: trechos cuja similaridade com a pergunta passa do limiar, do mais ao menos parecido. */
@@ -39,7 +45,10 @@ export function rankedSearch<T extends SearchableChunk>(
   queryVector?: number[] | null,
   minSimilarity = SEMANTIC_MIN,
 ): T[] {
-  return fuseRankings([keywordSearch(all, question), semanticSearch(all, queryVector, minSimilarity)], CONTEXT_CHUNKS);
+  return fuseRankings(
+    [keywordSearch(all, question, queryVector ? KEYWORD_MIN_COVERAGE : 0), semanticSearch(all, queryVector, minSimilarity)],
+    CONTEXT_CHUNKS,
+  );
 }
 
 /**
