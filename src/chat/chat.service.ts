@@ -21,6 +21,7 @@ import { buildSystemPrompt } from './system-prompt';
 import { GoalsService } from '../goals/goals.service';
 import { GoalCommand, GoalType, goalLabel, parseGoalCommand } from './goal-command';
 import { AiMetricsService } from './ai-metrics.service';
+import type { Feedback } from './dto/set-feedback.dto';
 import { errorLabel, MetricTimer } from './ai-metrics';
 import { UsageService } from './usage.service';
 import { TokenUsage } from './usage';
@@ -100,7 +101,7 @@ export class ChatService {
       this.messages
         .find({ chatId: chat._id })
         .sort({ createdAt: 1, _id: 1 })
-        .select('role content sources createdAt')
+        .select('role content sources feedback direct createdAt')
         .lean(),
       this.files.find({ chatId: chat._id }).select('name size charCount createdAt storedAs').lean(),
     ]);
@@ -109,9 +110,36 @@ export class ChatService {
       id: chat._id,
       title: chat.title,
       studyMinutes: chat.studyMinutes,
-      messages,
+      // Resposta da IA sem avaliação volta como null, para o app tratar sempre do mesmo jeito
+      messages: messages.map((message) => (message.role === 'assistant' ? { ...message, feedback: message.feedback ?? null } : message)),
       files: files.map(({ storedAs, ...file }) => ({ ...file, hasOriginal: !!storedAs })),
     };
+  }
+
+  /**
+   * 👍/👎 do aluno numa resposta da IA; `null` remove a avaliação. Só o dono do chat avalia, e só respostas da IA
+   * (a pergunta do aluno e as respostas montadas direto do banco, como "criei a meta", não são da IA).
+   */
+  async setFeedback(userId: string, chatId: string, messageId: string, feedback: Feedback | null) {
+    const chat = await this.getOwned(userId, chatId);
+
+    if (!isValidObjectId(messageId)) {
+      throw new NotFoundException('Mensagem não encontrada');
+    }
+
+    const message = await this.messages.findOne({ _id: messageId, chatId: chat._id }).select('role direct').lean();
+
+    if (!message) {
+      throw new NotFoundException('Mensagem não encontrada');
+    }
+
+    if (message.role !== 'assistant' || message.direct) {
+      throw new BadRequestException('Só é possível avaliar respostas da IA.');
+    }
+
+    await this.messages.updateOne({ _id: messageId }, feedback ? { $set: { feedback } } : { $unset: { feedback: '' } });
+
+    return { id: messageId, feedback };
   }
 
   async rename(userId: string, chatId: string, title: string) {

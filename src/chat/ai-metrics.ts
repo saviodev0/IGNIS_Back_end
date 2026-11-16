@@ -123,3 +123,17 @@ export function summarizeMetrics(rows: AiMetricRow[], days: number, now: Date = 
     }),
   };
 }
+
+/** 👍/👎 do período: quantas respostas da IA existem e quantas o aluno avaliou. */
+export function summarizeFeedback({ answers, up, down }: { answers: number; up: number; down: number }) {
+  const rated = up + down;
+
+  return {
+    answers,
+    rated,
+    up,
+    down,
+    ratedPercent: percent(rated, answers),
+    downPercentOfRated: percent(down, rated),
+  };
+}

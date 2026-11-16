@@ -27,22 +27,23 @@ const record = {
 describe('AiMetricsService', () => {
   it('record grava exatamente os números e rótulos recebidos', async () => {
     const create = jest.fn().mockResolvedValue({});
-    await new AiMetricsService({ create } as never).record(record);
+    await new AiMetricsService({ create } as never, {} as never).record(record);
     expect(create).toHaveBeenCalledWith(record);
   });
 
   it('record nunca lança: se o banco falhar, o chat segue', async () => {
     const create = jest.fn().mockRejectedValue(new Error('mongo caiu'));
-    await expect(new AiMetricsService({ create } as never).record(record)).resolves.toBeUndefined();
+    await expect(new AiMetricsService({ create } as never, {} as never).record(record)).resolves.toBeUndefined();
   });
 
   it('summary busca só o período pedido e calcula o resumo', async () => {
     const lean = jest.fn().mockResolvedValue([{ ...record }, { ...record, error: 'http_503' }]);
     const query: any = { select: jest.fn(() => query), limit: jest.fn(() => query), lean };
     const find = jest.fn(() => query);
+    const countDocuments = jest.fn(async (filter: any) => (filter.feedback === 'up' ? 3 : filter.feedback === 'down' ? 1 : 10));
 
     const before = Date.now();
-    const summary = await new AiMetricsService({ find } as never).summary(7);
+    const summary = await new AiMetricsService({ find } as never, { countDocuments } as never).summary(7);
 
     const after = Date.now();
 
@@ -52,6 +53,18 @@ describe('AiMetricsService', () => {
     expect(createdAt.$gte.getTime()).toBeLessThanOrEqual(after - 7 * 86_400_000);
     expect(summary.answers).toBe(2);
     expect(summary.errorRatePercent).toBe(50);
+  });
+
+  it('summary inclui os 👍/👎 do período, contando só respostas da IA (não as montadas direto do banco)', async () => {
+    const query: any = { select: jest.fn(() => query), limit: jest.fn(() => query), lean: jest.fn().mockResolvedValue([]) };
+    const countDocuments = jest.fn(async (filter: any) => (filter.feedback === 'up' ? 3 : filter.feedback === 'down' ? 1 : 10));
+
+    const summary = await new AiMetricsService({ find: () => query } as never, { countDocuments } as never).summary(7);
+
+    expect(summary.feedback).toEqual({ answers: 10, rated: 4, up: 3, down: 1, ratedPercent: 40, downPercentOfRated: 25 });
+    const filtro = countDocuments.mock.calls[0][0];
+    expect(filtro).toMatchObject({ role: 'assistant', direct: { $ne: true } });
+    expect(filtro.createdAt.$gte).toBeInstanceOf(Date);
   });
 });
 
