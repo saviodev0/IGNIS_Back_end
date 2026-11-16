@@ -105,6 +105,8 @@ Environment variables:
 | `LLM_FALLBACK_MODEL` | Backup model, enables the fallback (see below). Unset = no fallback |
 | `LLM_FALLBACK_SUMMARY_MODEL` | Backup for summaries/titles (defaults to `LLM_FALLBACK_MODEL`) |
 | `LLM_FALLBACK_URL`, `LLM_FALLBACK_API_KEY` | Backup provider (OpenAI-compatible chat completions); default is Groq itself with the same key |
+| `GROQ_URL` | Overrides the main provider URL (proxy/gateway; also handy for tests) |
+| `METRICS_TOKEN` | Enables `GET /metrics/ai` for the team (see below). Unset = endpoint disabled |
 | `LLM_TIMEOUT_MS` | How long to wait for the main provider to start answering before using the backup (default `30000`) |
 | `MONGODB_URL` | MongoDB connection string (defaults to the docker-compose database) |
 | `UPLOADS_DIR` | Where original PDF/DOCX uploads are stored (defaults to `./arquivos`) |
@@ -136,6 +138,23 @@ Client errors (`400`, `401`, ...) are not retried, and a student cancelling an a
 Once the text starts streaming it cannot switch provider, so a failure in the middle of an answer still ends it.
 Without `LLM_FALLBACK_MODEL` nothing changes. Using another Groq model (its own rate limit) needs only that variable;
 another provider also needs `LLM_FALLBACK_URL` and `LLM_FALLBACK_API_KEY`.
+
+### AI metrics
+
+Every chat answer stores one row in MongoDB (`aimetrics`) with **numbers and labels only**: model, whether the backup
+answered, time to first text, total time, error label (e.g. `http_503`), cancelled or not, whether sources were used,
+whether the chat had files, and token counts. No message or file text and nothing that identifies the student; rows
+expire after 90 days. Recording never blocks or breaks the chat.
+
+The team reads the summary with the `METRICS_TOKEN` from `.env` (students cannot, and without the variable the endpoint is off):
+
+```bash
+curl -H "x-metrics-token: $METRICS_TOKEN" "https://api.example.com/metrics/ai?days=7"   # days: 1 to 90, default 7
+```
+
+It returns answers, errors and error rate (by type), average and p95 of time to first text and total time (successful
+answers only), % without source (overall and only in chats that have files), % answered by the backup, average tokens and a
+per-model breakdown. Answers the student cancelled are counted apart and left out of rates and times.
 
 ## Deploying
 

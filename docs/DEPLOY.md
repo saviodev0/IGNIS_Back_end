@@ -112,7 +112,7 @@ A API **não inicia** em produção se faltar `DATABASE_URL`, `MONGODB_URL`, `CO
 | `TRUST_PROXY=1` | fixo (há um proxy, o Caddy, na frente: os limites por IP usam o IP real do aluno) |
 | cookie de login `Secure` | automático em produção |
 | `UPLOADS_DIR`, `MODELS_DIR` | `/data/arquivos` e `/data/modelos`, em volumes |
-| `AI_DAILY_TOKEN_LIMIT`, `GROQ_*`, `LLM_FALLBACK_*`, `OCR`, `EMBEDDINGS` | opcionais, no `.env` |
+| `AI_DAILY_TOKEN_LIMIT`, `GROQ_*`, `LLM_FALLBACK_*`, `METRICS_TOKEN`, `OCR`, `EMBEDDINGS` | opcionais, no `.env` |
 
 ## Problemas comuns
 
@@ -133,3 +133,14 @@ A API **não inicia** em produção se faltar `DATABASE_URL`, `MONGODB_URL`, `CO
 - [ ] Login por chave SSH (desative senha) e sem login direto como root.
 - [ ] Backups copiados para fora do servidor e restauração testada ao menos uma vez.
 - [ ] `docker compose ... pull` e `up -d --build` periodicamente para receber atualizações das imagens base.
+
+## Acompanhar a IA em uso (opcional)
+
+Defina `METRICS_TOKEN` no `.env` (por exemplo, `openssl rand -hex 24`) e reinicie a API. A equipe vê o resumo dos últimos 7 dias
+(tempo até o primeiro texto, tempo total, taxa de erro, respostas sem fonte, uso do provedor reserva):
+
+```bash
+curl -H "x-metrics-token: SEU_TOKEN" "https://api.SEU-DOMINIO/metrics/ai?days=7"
+```
+
+As métricas guardam só números e rótulos (nada do que o aluno escreve nem dos arquivos) e expiram em 90 dias.

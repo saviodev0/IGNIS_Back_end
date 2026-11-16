@@ -195,6 +195,52 @@ describe('GroqService com provedor reserva', () => {
   });
 });
 
+describe('GroqService: modelo que respondeu e URL', () => {
+  const fetchMock = jest.fn();
+
+  beforeEach(() => {
+    globalThis.fetch = fetchMock as unknown as typeof fetch;
+    fetchMock.mockReset();
+    jest.spyOn(Logger.prototype, 'warn').mockImplementation(() => undefined);
+  });
+
+  afterEach(() => jest.restoreAllMocks());
+
+  it('informa o modelo principal quando ele responde', async () => {
+    fetchMock.mockResolvedValueOnce(sse('ok'));
+    const onStart = jest.fn();
+
+    await ler(make(RESERVA).stream(mensagens, undefined, undefined, onStart));
+
+    expect(onStart).toHaveBeenCalledWith({ model: 'openai/gpt-oss-120b', fallback: false });
+  });
+
+  it('informa que foi o reserva quando o principal falhou', async () => {
+    fetchMock.mockResolvedValueOnce(erro(503)).mockResolvedValueOnce(sse('ok'));
+    const onStart = jest.fn();
+
+    await ler(make(RESERVA).stream(mensagens, undefined, undefined, onStart));
+
+    expect(onStart).toHaveBeenCalledWith({ model: 'llama-reserva', fallback: true });
+  });
+
+  it('não informa nada quando nenhum provedor responde', async () => {
+    fetchMock.mockResolvedValueOnce(erro(503)).mockResolvedValueOnce(erro(503));
+    const onStart = jest.fn();
+
+    await expect(ler(make(RESERVA).stream(mensagens, undefined, undefined, onStart))).rejects.toBeInstanceOf(ServiceUnavailableException);
+    expect(onStart).not.toHaveBeenCalled();
+  });
+
+  it('GROQ_URL troca o endereço do principal (proxy ou gateway)', async () => {
+    fetchMock.mockResolvedValueOnce(sse('ok'));
+
+    await ler(make({ GROQ_URL: 'http://gateway.local/v1/chat/completions' }).stream(mensagens));
+
+    expect(fetchMock.mock.calls[0][0]).toBe('http://gateway.local/v1/chat/completions');
+  });
+});
+
 describe('isRetryableStatus', () => {
   it('só 408, 429 e 5xx valem uma segunda tentativa', () => {
     expect([408, 429, 500, 503, 599].every(isRetryableStatus)).toBe(true);

@@ -44,7 +44,9 @@ export class GroqService {
    */
   private targets(primaryModel: string, fallbackModelKey: 'LLM_FALLBACK_MODEL' | 'LLM_FALLBACK_SUMMARY_MODEL'): Target[] {
     const key = this.apiKey;
-    const targets: Target[] = [{ label: 'principal', url: GROQ_URL, key, model: primaryModel }];
+    const targets: Target[] = [
+      { label: 'principal', url: this.config.get<string>('GROQ_URL') || GROQ_URL, key, model: primaryModel },
+    ];
 
     const fallbackModel =
       this.config.get<string>(fallbackModelKey) || this.config.get<string>('LLM_FALLBACK_MODEL');
@@ -74,7 +76,7 @@ export class GroqService {
     targets: Target[],
     makeBody: (model: string) => object,
     signal?: AbortSignal,
-  ): Promise<Response> {
+  ): Promise<{ response: Response; target: Target }> {
     for (let i = 0; i < targets.length; i++) {
       const target = targets[i];
       const next = targets[i + 1];
@@ -131,7 +133,7 @@ export class GroqService {
         continue;
       }
 
-      return response;
+      return { response, target };
     }
 
     throw new ServiceUnavailableException('A IA está indisponível no momento.');
@@ -150,10 +152,11 @@ export class GroqService {
     messages: LlmMessage[],
     signal?: AbortSignal,
     onUsage?: (usage: TokenUsage) => void,
+    onStart?: (info: { model: string; fallback: boolean }) => void,
   ): AsyncGenerator<string> {
     const primaryModel = this.config.get<string>('GROQ_MODEL') ?? 'openai/gpt-oss-120b';
 
-    const response = await this.send(
+    const { response, target } = await this.send(
       this.targets(primaryModel, 'LLM_FALLBACK_MODEL'),
       (model) => ({
         model,
@@ -171,6 +174,8 @@ export class GroqService {
       this.logger.error(`Groq ${response.status}: ${await response.text()}`);
       throw new ServiceUnavailableException('A IA está indisponível no momento.');
     }
+
+    onStart?.({ model: target.model, fallback: target.label === 'reserva' });
 
     const reader = response.body.getReader();
     const decoder = new TextDecoder();
@@ -228,7 +233,7 @@ export class GroqService {
   ): Promise<string> {
     const primaryModel = this.config.get<string>('GROQ_SUMMARY_MODEL') ?? 'openai/gpt-oss-20b';
 
-    const response = await this.send(this.targets(primaryModel, 'LLM_FALLBACK_SUMMARY_MODEL'), (model) => ({
+    const { response } = await this.send(this.targets(primaryModel, 'LLM_FALLBACK_SUMMARY_MODEL'), (model) => ({
       model,
       messages,
       max_tokens: maxTokens,

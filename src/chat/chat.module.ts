@@ -24,6 +24,10 @@ import { UsageService } from './usage.service';
 import { PrivacyService } from './privacy.service';
 import { OcrService } from './ocr.service';
 import { AiUsage, AiUsageSchema } from './schemas/ai-usage.schema';
+import { AiMetric, AiMetricSchema } from './schemas/ai-metric.schema';
+import { AiMetricsService } from './ai-metrics.service';
+import { AiMetricsController } from './ai-metrics.controller';
+import { MetricsGuard } from './metrics.guard';
 
 @Module({
   imports: [
@@ -47,14 +51,17 @@ import { AiUsage, AiUsageSchema } from './schemas/ai-usage.schema';
       { name: ChatFile.name, schema: ChatFileSchema },
       { name: StudyMaterial.name, schema: StudyMaterialSchema },
       { name: AiUsage.name, schema: AiUsageSchema },
+      { name: AiMetric.name, schema: AiMetricSchema },
     ]),
   ],
-  controllers: [ChatController],
+  controllers: [ChatController, AiMetricsController],
   providers: [
     ChatService,
     MaterialService,
     CycleTitleService,
     UsageService,
+    AiMetricsService,
+    MetricsGuard,
     PrivacyService,
     OcrService,
     FileTextService,

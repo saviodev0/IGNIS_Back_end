@@ -20,6 +20,8 @@ import { EmbeddingService } from './embedding.service';
 import { buildSystemPrompt } from './system-prompt';
 import { GoalsService } from '../goals/goals.service';
 import { GoalCommand, GoalType, goalLabel, parseGoalCommand } from './goal-command';
+import { AiMetricsService } from './ai-metrics.service';
+import { errorLabel, MetricTimer } from './ai-metrics';
 import { UsageService } from './usage.service';
 import { TokenUsage } from './usage';
 import { FileStorageService } from './file-storage.service';
@@ -54,6 +56,7 @@ export class ChatService {
     private readonly usage: UsageService,
     private readonly goals: GoalsService,
     private readonly groq: GroqService,
+    private readonly aiMetrics: AiMetricsService,
     private readonly studentContext: StudentContextService,
     private readonly intentRouter: IntentRouterService,
     private readonly directAnswer: DirectAnswerService,
@@ -411,12 +414,13 @@ export class ChatService {
       ? this.otherChatsMemory(userId, chat._id)
       : Promise.resolve(null);
 
-    const [studentInfo, chunks, planInfo, fileNames, memory] = await Promise.all([
+    const [studentInfo, chunks, planInfo, fileNames, memory, hasFiles] = await Promise.all([
       this.studentContext.build(userId, chat.studyMinutes),
       this.relevantChunks(chat._id, content),
       wantsPlan ? this.studentContext.buildPlan(userId) : null,
       wantsPlan ? this.files.find({ chatId: chat._id }).distinct('name') : [],
       memoryPromise,
+      this.files.exists({ chatId: chat._id }),
     ]);
 
     const userMessage = await this.messages.create({
@@ -445,14 +449,54 @@ export class ChatService {
       ).values(),
     ];
 
+    // Métricas desta resposta (só números e rótulos, nunca o texto)
+    let failure: unknown = null;
+    let model = '';
+    let usedFallback = false;
+    let tokens: TokenUsage = { promptTokens: 0, completionTokens: 0 };
+    const track = this.trackUsage(userId);
+    const timer = new MetricTimer();
+
     try {
       if (sources.length > 0) yield { type: 'sources', sources };
 
-      for await (const piece of this.groq.stream(llmMessages, signal, this.trackUsage(userId))) {
+      for await (const piece of this.groq.stream(
+        llmMessages,
+        signal,
+        (usage) => {
+          tokens = usage;
+          track(usage);
+        },
+        (info) => {
+          model = info.model;
+          usedFallback = info.fallback;
+        },
+      )) {
+        timer.firstToken();
         answer += piece;
         yield { type: 'delta', content: piece };
       }
+    } catch (error) {
+      failure = error;
+      throw error;
     } finally {
+      // Se o aluno cancelou, qualquer erro que sobrou na leitura é consequência disso, não falha da IA
+      const cancelled = Boolean(signal?.aborted);
+
+      void this.aiMetrics.record({
+        model,
+        fallback: usedFallback,
+        firstTokenMs: timer.firstTokenMs,
+        totalMs: timer.totalMs,
+        error: cancelled ? null : failure ? errorLabel(failure) : !answer ? 'resposta_vazia' : null,
+        cancelled,
+        usedSources: sources.length > 0,
+        sourceCount: sources.length,
+        hasFiles: Boolean(hasFiles),
+        promptTokens: tokens.promptTokens,
+        completionTokens: tokens.completionTokens,
+      });
+
       if (answer) {
         await this.messages.create({ chatId: chat._id, userId, role: 'assistant', content: answer, sources });
       } else {
