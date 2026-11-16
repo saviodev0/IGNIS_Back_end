@@ -102,6 +102,10 @@ Environment variables:
 | Variable | Purpose |
 | --- | --- |
 | `API_KEY` (or `GROQ_API_KEY`) | Groq API key |
+| `LLM_FALLBACK_MODEL` | Backup model, enables the fallback (see below). Unset = no fallback |
+| `LLM_FALLBACK_SUMMARY_MODEL` | Backup for summaries/titles (defaults to `LLM_FALLBACK_MODEL`) |
+| `LLM_FALLBACK_URL`, `LLM_FALLBACK_API_KEY` | Backup provider (OpenAI-compatible chat completions); default is Groq itself with the same key |
+| `LLM_TIMEOUT_MS` | How long to wait for the main provider to start answering before using the backup (default `30000`) |
 | `MONGODB_URL` | MongoDB connection string (defaults to the docker-compose database) |
 | `UPLOADS_DIR` | Where original PDF/DOCX uploads are stored (defaults to `./arquivos`) |
 | `AI_DAILY_TOKEN_LIMIT` | Daily AI token quota per student (defaults to `200000`; `0` disables the limit) |
@@ -122,6 +126,16 @@ no Groq key (only the search runs) and uses the same code as the chat (`src/chat
 - Flags: `-- --detalhes` lists every question, `-- --sem-embeddings` runs keyword search only (no model download).
 
 The questions are split into `ajuste` (used to choose the thresholds) and `prova` (never used for tuning, kept as an independent check). When you change the chunker, the ranking or the thresholds, run it before and after and compare.
+
+### AI backup provider
+
+If the main model fails with `429`, `408`, `5xx`, a network error or a timeout before it starts answering,
+the request is retried **once** on the backup (`LLM_FALLBACK_MODEL`) and the student does not notice.
+The reason is logged as a warning (`IA principal (...) respondeu 429; usando o reserva (...)`).
+Client errors (`400`, `401`, ...) are not retried, and a student cancelling an answer never triggers the backup.
+Once the text starts streaming it cannot switch provider, so a failure in the middle of an answer still ends it.
+Without `LLM_FALLBACK_MODEL` nothing changes. Using another Groq model (its own rate limit) needs only that variable;
+another provider also needs `LLM_FALLBACK_URL` and `LLM_FALLBACK_API_KEY`.
 
 ## Deploying
 
