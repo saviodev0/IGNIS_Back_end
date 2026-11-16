@@ -5,8 +5,7 @@
  *   npm run eval:search -- --detalhes      lista também as perguntas que acertaram
  *   npm run eval:search -- --sem-embeddings  só palavras-chave (não baixa o modelo)
  *
- * Os 3 documentos de eval/search/docs viram os trechos de UM chat (como se o aluno tivesse enviado os três)
- * e cada pergunta de perguntas.json é buscada com o mesmo código que o chat usa (src/chat/search.ts).
+ * Os documentos de eval/search/docs viram os trechos de UM chat e cada pergunta de perguntas.json é buscada com o mesmo código que o chat usa (src/chat/search.ts).
  * Uma pergunta "relacionada" acerta quando o trecho que traz a resposta (campo `esperado`) está entre os escolhidos.
  */
 import { readFileSync } from 'fs';
@@ -16,6 +15,7 @@ import { cosine } from '../../src/chat/chunk-ranker';
 import { EmbeddingService } from '../../src/chat/embedding.service';
 import {
   CONTEXT_CHUNKS,
+  KEYWORD_MIN_COVERAGE,
   SEMANTIC_MIN,
   keywordSearch,
   rankedSearch,
@@ -25,6 +25,7 @@ import {
 } from '../../src/chat/search';
 
 interface Pergunta {
+  conjunto?: 'ajuste' | 'prova';
   tipo: 'literal' | 'parafraseada' | 'sem-relacao' | 'sem-relacao-parecida' | 'generica';
   doc: string | null;
   pergunta: string;
@@ -46,7 +47,7 @@ const frac = (parte: number, total: number) => `${String(parte).padStart(2)}/${S
 
 async function main() {
   const perguntas: Pergunta[] = JSON.parse(readFileSync(join(pasta, 'perguntas.json'), 'utf8'));
-  const docs = ['biologia-celula', 'historia-era-vargas', 'fisica-mecanica'];
+  const docs = ['biologia-celula', 'historia-era-vargas', 'fisica-mecanica', 'quimica-geral'];
 
   const trechos: Trecho[] = docs.flatMap((doc) =>
     splitIntoChunks(readFileSync(join(pasta, 'docs', `${doc}.txt`), 'utf8')).chunks.map((text, indice) => ({ doc, indice, text })),
@@ -97,12 +98,12 @@ async function main() {
     `  ${relacionadas.length} relacionadas (${relacionadas.filter((p) => p.tipo === 'literal').length} literais + ${relacionadas.filter((p) => p.tipo === 'parafraseada').length} parafraseadas), ` +
       `${semRelacao.length} sem relação, ${genericas.length} genéricas`,
   );
-  console.log(`Chat envia até ${CONTEXT_CHUNKS} trechos por pergunta | limiar semântico atual: ${SEMANTIC_MIN}`);
+  console.log(`Chat envia até ${CONTEXT_CHUNKS} trechos por pergunta | limiar semântico atual: ${SEMANTIC_MIN} | cobertura mínima das palavras: ${KEYWORD_MIN_COVERAGE}`);
   console.log(semEmbeddings ? 'Modo: só palavras-chave (--sem-embeddings)\n' : 'Modelo: Xenova/multilingual-e5-small\n');
 
   const metodos: { nome: string; ranque: (p: Pergunta) => Trecho[]; enviados: (p: Pergunta) => Trecho[] }[] = [
     {
-      nome: 'Palavras-chave (BM25)',
+      nome: 'Palavras-chave (BM25, sem filtro)',
       ranque: (p) => keywordSearch(trechos, p.pergunta),
       enviados: (p) => keywordSearch(trechos, p.pergunta).slice(0, CONTEXT_CHUNKS),
     },
@@ -154,7 +155,7 @@ async function main() {
   if (!semEmbeddings) {
     console.log('\nLIMIAR DA BUSCA SEMÂNTICA (busca híbrida; o limiar atual está marcado com *)');
     console.log(`  ${'limiar'.padEnd(9)}${`acerto (${CONTEXT_CHUNKS} enviados)`.padEnd(20)}falsos positivos`);
-    const limiares = [...new Set([0.78, 0.79, 0.795, 0.8, SEMANTIC_MIN, 0.81, 0.815, 0.82, 0.83, 0.84])].sort((a, b) => a - b);
+    const limiares = [...new Set([0.78, 0.79, 0.795, 0.8, 0.805, 0.81, 0.815, 0.82, SEMANTIC_MIN, 0.84, 0.85])].sort((a, b) => a - b);
     for (const limiar of limiares) {
       const acertos = relacionadas.filter((p) => contem(searchChunks(trechos, p.pergunta, consulta(p.pergunta), limiar), p.esperado!)).length;
       const falsos = semRelacao.filter((p) => searchChunks(trechos, p.pergunta, consulta(p.pergunta), limiar).length > 0).length;
@@ -165,6 +166,17 @@ async function main() {
     const sim = (a: Pergunta[]) => a.map((p) => Math.max(...trechos.map((t) => cosine(consulta(p.pergunta)!, t.vector!))));
     const faixa = (v: number[]) => `${Math.min(...v).toFixed(3)} a ${Math.max(...v).toFixed(3)}`;
     console.log(`\nSIMILARIDADE DO MELHOR TRECHO: relacionadas ${faixa(sim(relacionadas))} | sem relação ${faixa(sim(semRelacao))}`);
+  }
+
+  // As perguntas "prova" não foram usadas para escolher nenhum ajuste: servem de conferência independente
+  console.log('\nPOR CONJUNTO (busca híbrida; "prova" = perguntas que não participaram dos ajustes)');
+  for (const conjunto of ['ajuste', 'prova'] as const) {
+    const rel = relacionadas.filter((p) => p.conjunto === conjunto);
+    const sem = semRelacao.filter((p) => p.conjunto === conjunto);
+    if (!rel.length && !sem.length) continue;
+    const acertos = rel.filter((p) => contem(hibrida.enviados(p), p.esperado!)).length;
+    const falsos = sem.filter((p) => hibrida.enviados(p).length > 0).length;
+    console.log(`  ${conjunto.padEnd(8)}acerto ${frac(acertos, rel.length)}   falsos positivos ${frac(falsos, sem.length)}`);
   }
 
   const erros: string[] = [];

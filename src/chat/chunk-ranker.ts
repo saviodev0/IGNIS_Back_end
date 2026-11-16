@@ -42,8 +42,17 @@ export interface RankableChunk {
  * Ranking BM25 por palavra-chave (sem embeddings): palavras raras no material
  * pesam mais que palavras comuns, e trechos longos não ganham só por serem longos.
  * Devolve só os trechos com alguma palavra em comum, do mais ao menos relevante.
+ *
+ * `minCoverage` (0 a 1) exige que o trecho contenha palavras que somem pelo menos essa fração do "peso" (IDF)
+ * das palavras da pergunta. Evita que uma palavra genérica ("segundo", "teoria") sozinha traga um trecho
+ * quando o resto da pergunta não aparece no material.
  */
-export function rankChunks<T extends RankableChunk>(chunks: T[], question: string, limit: number): T[] {
+export function rankChunks<T extends RankableChunk>(
+  chunks: T[],
+  question: string,
+  limit: number,
+  minCoverage = 0,
+): T[] {
   const terms = [...new Set(tokenize(question))];
   if (terms.length === 0 || chunks.length === 0) return [];
 
@@ -55,6 +64,8 @@ export function rankChunks<T extends RankableChunk>(chunks: T[], question: strin
     const containing = docs.filter((doc) => doc.includes(term)).length;
     idf.set(term, Math.log(1 + (docs.length - containing + 0.5) / (containing + 0.5)));
   }
+
+  const totalWeight = terms.reduce((total, term) => total + idf.get(term)!, 0);
 
   const k1 = 1.4;
   const b = 0.75;
@@ -70,9 +81,11 @@ export function rankChunks<T extends RankableChunk>(chunks: T[], question: strin
         return total + idf.get(term)! * ((tf * (k1 + 1)) / (tf + k1 * (1 - b + (b * doc.length) / avgLength)));
       }, 0);
 
-      return { chunk: chunks[index], score };
+      const matchedWeight = terms.reduce((total, term) => total + (frequency.has(term) ? idf.get(term)! : 0), 0);
+
+      return { chunk: chunks[index], score, coverage: totalWeight > 0 ? matchedWeight / totalWeight : 0 };
     })
-    .filter((item) => item.score > 0)
+    .filter((item) => item.score > 0 && item.coverage >= minCoverage)
     .sort((a, b) => b.score - a.score)
     .slice(0, limit)
     .map((item) => item.chunk);

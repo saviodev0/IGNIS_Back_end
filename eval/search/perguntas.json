@@ -3,288 +3,441 @@
   "tipo": "literal",
   "doc": "biologia-celula",
   "pergunta": "Quem observou células pela primeira vez e em que ano?",
-  "esperado": "Robert Hooke observou células pela primeira vez em 1665"
+  "esperado": "Robert Hooke observou células pela primeira vez em 1665",
+  "conjunto": "ajuste"
  },
  {
   "tipo": "literal",
   "doc": "biologia-celula",
   "pergunta": "Onde fica o material genético das bactérias?",
-  "esperado": "nucleoide"
+  "esperado": "nucleoide",
+  "conjunto": "ajuste"
  },
  {
   "tipo": "literal",
   "doc": "biologia-celula",
   "pergunta": "O que é o modelo do mosaico fluido?",
-  "esperado": "mosaico fluido"
+  "esperado": "mosaico fluido",
+  "conjunto": "ajuste"
  },
  {
   "tipo": "literal",
   "doc": "biologia-celula",
   "pergunta": "Qual organela é responsável pela respiração celular aeróbica?",
-  "esperado": "As mitocôndrias são as organelas"
+  "esperado": "As mitocôndrias são as organelas",
+  "conjunto": "ajuste"
  },
  {
   "tipo": "literal",
   "doc": "biologia-celula",
   "pergunta": "Quantos ATP cada glicose rende na respiração aeróbica?",
-  "esperado": "30 a 32 ATP"
+  "esperado": "30 a 32 ATP",
+  "conjunto": "ajuste"
  },
  {
   "tipo": "literal",
   "doc": "biologia-celula",
   "pergunta": "Quais são as fases da mitose?",
-  "esperado": "prófase, metáfase, anáfase e telófase"
+  "esperado": "prófase, metáfase, anáfase e telófase",
+  "conjunto": "ajuste"
  },
  {
   "tipo": "literal",
   "doc": "biologia-celula",
   "pergunta": "O que acontece no crossing-over?",
-  "esperado": "troca de pedaços entre cromossomos homólogos"
+  "esperado": "troca de pedaços entre cromossomos homólogos",
+  "conjunto": "ajuste"
  },
  {
   "tipo": "literal",
   "doc": "historia-era-vargas",
   "pergunta": "Quem foi o candidato da Aliança Liberal em 1930?",
-  "esperado": "lançaram Getúlio Vargas como candidato"
+  "esperado": "lançaram Getúlio Vargas como candidato",
+  "conjunto": "ajuste"
  },
  {
   "tipo": "literal",
   "doc": "historia-era-vargas",
   "pergunta": "O que foi o Plano Cohen?",
-  "esperado": "Plano Cohen, um documento forjado"
+  "esperado": "Plano Cohen, um documento forjado",
+  "conjunto": "ajuste"
  },
  {
   "tipo": "literal",
   "doc": "historia-era-vargas",
   "pergunta": "Em que ano foi publicada a CLT?",
-  "esperado": "Em 1943 foi publicada a CLT"
+  "esperado": "Em 1943 foi publicada a CLT",
+  "conjunto": "ajuste"
  },
  {
   "tipo": "literal",
   "doc": "historia-era-vargas",
   "pergunta": "Onde fica a Companhia Siderúrgica Nacional?",
-  "esperado": "Volta Redonda"
+  "esperado": "Volta Redonda",
+  "conjunto": "ajuste"
  },
  {
   "tipo": "literal",
   "doc": "historia-era-vargas",
   "pergunta": "O que dizia a Carta Testamento de Vargas?",
-  "esperado": "Carta Testamento, em que afirmava"
+  "esperado": "Carta Testamento, em que afirmava",
+  "conjunto": "ajuste"
  },
  {
   "tipo": "literal",
   "doc": "fisica-mecanica",
   "pergunta": "Qual é a fórmula da segunda lei de Newton?",
-  "esperado": "F = m·a"
+  "esperado": "F = m·a",
+  "conjunto": "ajuste"
  },
  {
   "tipo": "literal",
   "doc": "fisica-mecanica",
   "pergunta": "O que diz a equação de Torricelli?",
-  "esperado": "equação de Torricelli"
+  "esperado": "equação de Torricelli",
+  "conjunto": "ajuste"
  },
  {
   "tipo": "literal",
   "doc": "fisica-mecanica",
   "pergunta": "Quanto vale a constante G da gravitação?",
-  "esperado": "6,67"
+  "esperado": "6,67",
+  "conjunto": "ajuste"
  },
  {
   "tipo": "literal",
   "doc": "fisica-mecanica",
   "pergunta": "Qual é a fórmula da energia cinética?",
-  "esperado": "Ec = m·v²/2"
+  "esperado": "Ec = m·v²/2",
+  "conjunto": "ajuste"
  },
  {
   "tipo": "literal",
   "doc": "fisica-mecanica",
   "pergunta": "O que afirma a terceira lei de Kepler?",
-  "esperado": "A terceira lei relaciona"
+  "esperado": "A terceira lei relaciona",
+  "conjunto": "ajuste"
  },
  {
   "tipo": "parafraseada",
   "doc": "biologia-celula",
   "pergunta": "Por que se acredita que a mitocôndria veio de uma bactéria?",
-  "esperado": "teoria endossimbiótica"
+  "esperado": "teoria endossimbiótica",
+  "conjunto": "ajuste"
  },
  {
   "tipo": "parafraseada",
   "doc": "biologia-celula",
   "pergunta": "Em qual estrutura da planta o açúcar é fabricado usando a luz do sol?",
-  "esperado": "A fotossíntese ocorre nos cloroplastos"
+  "esperado": "A fotossíntese ocorre nos cloroplastos",
+  "conjunto": "ajuste"
  },
  {
   "tipo": "parafraseada",
   "doc": "biologia-celula",
   "pergunta": "A célula gasta energia para deixar as substâncias entrarem ou sair?",
-  "esperado": "No transporte passivo"
+  "esperado": "No transporte passivo",
+  "conjunto": "ajuste"
  },
  {
   "tipo": "parafraseada",
   "doc": "biologia-celula",
   "pergunta": "Por que o músculo tem tantas usinas de energia?",
-  "esperado": "Células com grande demanda de energia"
+  "esperado": "Células com grande demanda de energia",
+  "conjunto": "ajuste"
  },
  {
   "tipo": "parafraseada",
   "doc": "biologia-celula",
   "pergunta": "Que erro na separação dos cromossomos provoca a trissomia do 21?",
-  "esperado": "não disjunção"
+  "esperado": "não disjunção",
+  "conjunto": "ajuste"
  },
  {
   "tipo": "parafraseada",
   "doc": "biologia-celula",
   "pergunta": "Que estrutura guarda as enzimas que digerem o que está velho na célula?",
-  "esperado": "lisossomos, formados a partir do Golgi"
+  "esperado": "lisossomos, formados a partir do Golgi",
+  "conjunto": "ajuste"
  },
  {
   "tipo": "parafraseada",
   "doc": "biologia-celula",
   "pergunta": "Quanta energia se ganha quando não há oxigênio disponível?",
-  "esperado": "apenas 2 ATP"
+  "esperado": "apenas 2 ATP",
+  "conjunto": "ajuste"
  },
  {
   "tipo": "parafraseada",
   "doc": "historia-era-vargas",
   "pergunta": "Por que São Paulo pegou em armas contra o governo em 1932?",
-  "esperado": "exigindo uma nova Constituição"
+  "esperado": "exigindo uma nova Constituição",
+  "conjunto": "ajuste"
  },
  {
   "tipo": "parafraseada",
   "doc": "historia-era-vargas",
   "pergunta": "Quem cuidava da censura e da imagem do presidente durante a ditadura?",
-  "esperado": "DIP, o Departamento de Imprensa"
+  "esperado": "DIP, o Departamento de Imprensa",
+  "conjunto": "ajuste"
  },
  {
   "tipo": "parafraseada",
   "doc": "historia-era-vargas",
   "pergunta": "O que enfraqueceu o regime depois que o país entrou na guerra?",
-  "esperado": "A contradição de combater ditaduras"
+  "esperado": "A contradição de combater ditaduras",
+  "conjunto": "ajuste"
  },
  {
   "tipo": "parafraseada",
   "doc": "historia-era-vargas",
   "pergunta": "Quais benefícios o empregado passou a ter nas leis da época?",
-  "esperado": "salário mínimo, jornada de oito horas"
+  "esperado": "salário mínimo, jornada de oito horas",
+  "conjunto": "ajuste"
  },
  {
   "tipo": "parafraseada",
   "doc": "historia-era-vargas",
   "pergunta": "Como o governo quis deixar de depender do café?",
-  "esperado": "substituição de importações"
+  "esperado": "substituição de importações",
+  "conjunto": "ajuste"
  },
  {
   "tipo": "parafraseada",
   "doc": "historia-era-vargas",
   "pergunta": "Quem morreu no atentado que acabou pressionando o presidente?",
-  "esperado": "major Rubens Vaz"
+  "esperado": "major Rubens Vaz",
+  "conjunto": "ajuste"
  },
  {
   "tipo": "parafraseada",
   "doc": "fisica-mecanica",
   "pergunta": "Por que o passageiro é jogado para a frente quando o ônibus freia?",
-  "esperado": "lei da inércia"
+  "esperado": "lei da inércia",
+  "conjunto": "ajuste"
  },
  {
   "tipo": "parafraseada",
   "doc": "fisica-mecanica",
   "pergunta": "Como um foguete consegue subir?",
-  "esperado": "ele expulsa gases"
+  "esperado": "ele expulsa gases",
+  "conjunto": "ajuste"
  },
  {
   "tipo": "parafraseada",
   "doc": "fisica-mecanica",
   "pergunta": "O que acontece com a atração entre dois corpos se a distância entre eles dobra?",
-  "esperado": "cai para um quarto"
+  "esperado": "cai para um quarto",
+  "conjunto": "ajuste"
  },
  {
   "tipo": "parafraseada",
   "doc": "fisica-mecanica",
   "pergunta": "Se a velocidade dobrar, o que acontece com a energia do movimento?",
-  "esperado": "multiplica a energia cinética por quatro"
+  "esperado": "multiplica a energia cinética por quatro",
+  "conjunto": "ajuste"
  },
  {
   "tipo": "parafraseada",
   "doc": "fisica-mecanica",
   "pergunta": "O planeta anda mais rápido perto ou longe do Sol?",
-  "esperado": "periélio"
+  "esperado": "periélio",
+  "conjunto": "ajuste"
  },
  {
   "tipo": "parafraseada",
   "doc": "fisica-mecanica",
   "pergunta": "Em quanto tempo um carro a 20 m/s anda 100 metros?",
-  "esperado": "um carro a 20 m/s percorre 100 metros"
+  "esperado": "um carro a 20 m/s percorre 100 metros",
+  "conjunto": "ajuste"
  },
  {
   "tipo": "sem-relacao",
   "doc": null,
   "pergunta": "Qual é a melhor receita de bolo de cenoura?",
-  "esperado": null
+  "esperado": null,
+  "conjunto": "ajuste"
  },
  {
   "tipo": "sem-relacao",
   "doc": null,
   "pergunta": "Quem ganhou a Copa do Mundo de 2022?",
-  "esperado": null
+  "esperado": null,
+  "conjunto": "ajuste"
  },
  {
   "tipo": "sem-relacao",
   "doc": null,
   "pergunta": "Como faço um laço de repetição em Python?",
-  "esperado": null
+  "esperado": null,
+  "conjunto": "ajuste"
  },
  {
   "tipo": "sem-relacao",
   "doc": null,
   "pergunta": "Qual é a capital da Austrália?",
-  "esperado": null
+  "esperado": null,
+  "conjunto": "ajuste"
  },
  {
   "tipo": "sem-relacao",
   "doc": null,
   "pergunta": "Como funciona o bitcoin?",
-  "esperado": null
+  "esperado": null,
+  "conjunto": "ajuste"
  },
  {
   "tipo": "sem-relacao-parecida",
   "doc": null,
   "pergunta": "Como acontece a replicação do DNA no núcleo?",
-  "esperado": null
+  "esperado": null,
+  "conjunto": "ajuste"
  },
  {
   "tipo": "sem-relacao-parecida",
   "doc": null,
   "pergunta": "Quem foi Dom Pedro II e o que ele fez no Segundo Reinado?",
-  "esperado": null
+  "esperado": null,
+  "conjunto": "ajuste"
  },
  {
   "tipo": "sem-relacao-parecida",
   "doc": null,
   "pergunta": "Quando começou a ditadura militar de 1964?",
-  "esperado": null
+  "esperado": null,
+  "conjunto": "ajuste"
  },
  {
   "tipo": "sem-relacao-parecida",
   "doc": null,
   "pergunta": "O que diz a teoria da relatividade restrita de Einstein?",
-  "esperado": null
+  "esperado": null,
+  "conjunto": "ajuste"
  },
  {
   "tipo": "sem-relacao-parecida",
   "doc": null,
   "pergunta": "Como se resolve uma equação do segundo grau?",
-  "esperado": null
+  "esperado": null,
+  "conjunto": "ajuste"
  },
  {
   "tipo": "generica",
   "doc": null,
   "pergunta": "Resuma o arquivo",
-  "esperado": null
+  "esperado": null,
+  "conjunto": "ajuste"
  },
  {
   "tipo": "generica",
   "doc": null,
   "pergunta": "O que diz o documento que eu enviei?",
-  "esperado": null
+  "esperado": null,
+  "conjunto": "ajuste"
+ },
+ {
+  "tipo": "literal",
+  "doc": "quimica-geral",
+  "pergunta": "Qual é o valor da constante de Avogadro?",
+  "esperado": "6,02 × 10²³",
+  "conjunto": "prova"
+ },
+ {
+  "tipo": "literal",
+  "doc": "quimica-geral",
+  "pergunta": "O que é uma ligação covalente?",
+  "esperado": "os átomos compartilham pares de elétrons",
+  "conjunto": "prova"
+ },
+ {
+  "tipo": "literal",
+  "doc": "quimica-geral",
+  "pergunta": "Qual é o pH da água pura?",
+  "esperado": "pH igual a 7",
+  "conjunto": "prova"
+ },
+ {
+  "tipo": "literal",
+  "doc": "quimica-geral",
+  "pergunta": "O que mostrou o experimento de Rutherford com a folha de ouro?",
+  "esperado": "bombardeou uma folha de ouro",
+  "conjunto": "prova"
+ },
+ {
+  "tipo": "parafraseada",
+  "doc": "quimica-geral",
+  "pergunta": "Por que o sal de cozinha dissolvido na água conduz eletricidade?",
+  "esperado": "só conduzem corrente elétrica",
+  "conjunto": "prova"
+ },
+ {
+  "tipo": "parafraseada",
+  "doc": "quimica-geral",
+  "pergunta": "Como se chama a reação que puxa calor da vizinhança?",
+  "esperado": "As reações endotérmicas",
+  "conjunto": "prova"
+ },
+ {
+  "tipo": "parafraseada",
+  "doc": "quimica-geral",
+  "pergunta": "Por que o cobre pode virar fio?",
+  "esperado": "maleabilidade e a ductilidade",
+  "conjunto": "prova"
+ },
+ {
+  "tipo": "parafraseada",
+  "doc": "quimica-geral",
+  "pergunta": "Que regra garante que a massa não muda numa transformação química?",
+  "esperado": "lei de Lavoisier",
+  "conjunto": "prova"
+ },
+ {
+  "tipo": "parafraseada",
+  "doc": "quimica-geral",
+  "pergunta": "Por que elementos da mesma coluna reagem de forma semelhante?",
+  "esperado": "mesmo número de elétrons na camada de valência",
+  "conjunto": "prova"
+ },
+ {
+  "tipo": "parafraseada",
+  "doc": "quimica-geral",
+  "pergunta": "Quanto pesa um mol de moléculas de água?",
+  "esperado": "18 g/mol",
+  "conjunto": "prova"
+ },
+ {
+  "tipo": "sem-relacao",
+  "doc": null,
+  "pergunta": "Quem pintou a Mona Lisa?",
+  "esperado": null,
+  "conjunto": "prova"
+ },
+ {
+  "tipo": "sem-relacao",
+  "doc": null,
+  "pergunta": "Como se pede um habeas corpus na justiça?",
+  "esperado": null,
+  "conjunto": "prova"
+ },
+ {
+  "tipo": "sem-relacao-parecida",
+  "doc": null,
+  "pergunta": "O que diz a lei de Ohm sobre corrente e resistência?",
+  "esperado": null,
+  "conjunto": "prova"
+ },
+ {
+  "tipo": "sem-relacao-parecida",
+  "doc": null,
+  "pergunta": "Qual é a fórmula do ácido sulfúrico e para que serve?",
+  "esperado": null,
+  "conjunto": "prova"
+ },
+ {
+  "tipo": "sem-relacao-parecida",
+  "doc": null,
+  "pergunta": "Como acontece a fermentação do vinho?",
+  "esperado": null,
+  "conjunto": "prova"
  }
 ]

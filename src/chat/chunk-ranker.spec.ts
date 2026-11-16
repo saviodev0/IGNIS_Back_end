@@ -8,6 +8,13 @@ const chunks = [
 ];
 
 describe('rankChunks', () => {
+  it('minCoverage descarta trecho que só tem uma palavra genérica da pergunta', () => {
+    const material = [{ text: 'O carro acelera em segundos na pista.' }, { text: 'A mitocôndria produz ATP.' }];
+    const pergunta = 'Quem foi Dom Pedro durante o segundo reinado?';
+    expect(rankChunks(material, pergunta, 4)).toHaveLength(1);
+    expect(rankChunks(material, pergunta, 4, 0.3)).toEqual([]);
+  });
+
   it('acha o trecho certo ignorando acento e plural', () => {
     const [first] = rankChunks(chunks, 'o que fazem as mitocondrias?', 2);
     expect(first.text).toContain('organela');
