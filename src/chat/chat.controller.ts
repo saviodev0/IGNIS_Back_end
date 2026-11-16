@@ -189,6 +189,7 @@ export class ChatController {
       id,
       dto.content,
       abort.signal,
+      { replaceLast: dto.replaceLast === true },
     );
 
     const send = (event: object) => response.write(`data: ${JSON.stringify(event)}\n\n`);
