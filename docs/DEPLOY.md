@@ -112,7 +112,7 @@ A API **não inicia** em produção se faltar `DATABASE_URL`, `MONGODB_URL`, `CO
 | `TRUST_PROXY=1` | fixo (há um proxy, o Caddy, na frente: os limites por IP usam o IP real do aluno) |
 | cookie de login `Secure` | automático em produção |
 | `UPLOADS_DIR`, `MODELS_DIR` | `/data/arquivos` e `/data/modelos`, em volumes |
-| `AI_DAILY_TOKEN_LIMIT`, `GROQ_*`, `OCR`, `EMBEDDINGS` | opcionais, no `.env` |
+| `AI_DAILY_TOKEN_LIMIT`, `GROQ_*`, `LLM_FALLBACK_*`, `OCR`, `EMBEDDINGS` | opcionais, no `.env` |
 
 ## Problemas comuns
 
@@ -122,7 +122,7 @@ A API **não inicia** em produção se faltar `DATABASE_URL`, `MONGODB_URL`, `CO
 | Erro de CORS no navegador | `APP_HOST` não bate com o endereço aberto no navegador |
 | Certificado HTTPS não sai | DNS ainda não aponta para o servidor, ou portas 80/443 fechadas. Veja `docker compose logs caddy` |
 | A API reinicia sozinha | Veja `logs api`: a mensagem diz qual variável falta |
-| Chat responde "IA indisponível" | `GROQ_API_KEY` ausente ou inválida, ou limite da Groq |
+| Chat responde "IA indisponível" | `GROQ_API_KEY` ausente ou inválida, ou limite da Groq (configure `LLM_FALLBACK_MODEL` para ter um reserva; o log mostra `usando o reserva`) |
 | Falta de memória (contêiner morto) | Servidor com menos de 4 GB. Aumente a máquina ou desligue `EMBEDDINGS=off` e `OCR=off` |
 | Muitos "429 Muitas requisições" para todos | `TRUST_PROXY` ausente (todos pareceriam um IP só) |
 
