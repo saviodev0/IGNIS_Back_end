@@ -1,0 +1,290 @@
+[
+ {
+  "tipo": "literal",
+  "doc": "biologia-celula",
+  "pergunta": "Quem observou células pela primeira vez e em que ano?",
+  "esperado": "Robert Hooke observou células pela primeira vez em 1665"
+ },
+ {
+  "tipo": "literal",
+  "doc": "biologia-celula",
+  "pergunta": "Onde fica o material genético das bactérias?",
+  "esperado": "nucleoide"
+ },
+ {
+  "tipo": "literal",
+  "doc": "biologia-celula",
+  "pergunta": "O que é o modelo do mosaico fluido?",
+  "esperado": "mosaico fluido"
+ },
+ {
+  "tipo": "literal",
+  "doc": "biologia-celula",
+  "pergunta": "Qual organela é responsável pela respiração celular aeróbica?",
+  "esperado": "As mitocôndrias são as organelas"
+ },
+ {
+  "tipo": "literal",
+  "doc": "biologia-celula",
+  "pergunta": "Quantos ATP cada glicose rende na respiração aeróbica?",
+  "esperado": "30 a 32 ATP"
+ },
+ {
+  "tipo": "literal",
+  "doc": "biologia-celula",
+  "pergunta": "Quais são as fases da mitose?",
+  "esperado": "prófase, metáfase, anáfase e telófase"
+ },
+ {
+  "tipo": "literal",
+  "doc": "biologia-celula",
+  "pergunta": "O que acontece no crossing-over?",
+  "esperado": "troca de pedaços entre cromossomos homólogos"
+ },
+ {
+  "tipo": "literal",
+  "doc": "historia-era-vargas",
+  "pergunta": "Quem foi o candidato da Aliança Liberal em 1930?",
+  "esperado": "lançaram Getúlio Vargas como candidato"
+ },
+ {
+  "tipo": "literal",
+  "doc": "historia-era-vargas",
+  "pergunta": "O que foi o Plano Cohen?",
+  "esperado": "Plano Cohen, um documento forjado"
+ },
+ {
+  "tipo": "literal",
+  "doc": "historia-era-vargas",
+  "pergunta": "Em que ano foi publicada a CLT?",
+  "esperado": "Em 1943 foi publicada a CLT"
+ },
+ {
+  "tipo": "literal",
+  "doc": "historia-era-vargas",
+  "pergunta": "Onde fica a Companhia Siderúrgica Nacional?",
+  "esperado": "Volta Redonda"
+ },
+ {
+  "tipo": "literal",
+  "doc": "historia-era-vargas",
+  "pergunta": "O que dizia a Carta Testamento de Vargas?",
+  "esperado": "Carta Testamento, em que afirmava"
+ },
+ {
+  "tipo": "literal",
+  "doc": "fisica-mecanica",
+  "pergunta": "Qual é a fórmula da segunda lei de Newton?",
+  "esperado": "F = m·a"
+ },
+ {
+  "tipo": "literal",
+  "doc": "fisica-mecanica",
+  "pergunta": "O que diz a equação de Torricelli?",
+  "esperado": "equação de Torricelli"
+ },
+ {
+  "tipo": "literal",
+  "doc": "fisica-mecanica",
+  "pergunta": "Quanto vale a constante G da gravitação?",
+  "esperado": "6,67"
+ },
+ {
+  "tipo": "literal",
+  "doc": "fisica-mecanica",
+  "pergunta": "Qual é a fórmula da energia cinética?",
+  "esperado": "Ec = m·v²/2"
+ },
+ {
+  "tipo": "literal",
+  "doc": "fisica-mecanica",
+  "pergunta": "O que afirma a terceira lei de Kepler?",
+  "esperado": "A terceira lei relaciona"
+ },
+ {
+  "tipo": "parafraseada",
+  "doc": "biologia-celula",
+  "pergunta": "Por que se acredita que a mitocôndria veio de uma bactéria?",
+  "esperado": "teoria endossimbiótica"
+ },
+ {
+  "tipo": "parafraseada",
+  "doc": "biologia-celula",
+  "pergunta": "Em qual estrutura da planta o açúcar é fabricado usando a luz do sol?",
+  "esperado": "A fotossíntese ocorre nos cloroplastos"
+ },
+ {
+  "tipo": "parafraseada",
+  "doc": "biologia-celula",
+  "pergunta": "A célula gasta energia para deixar as substâncias entrarem ou sair?",
+  "esperado": "No transporte passivo"
+ },
+ {
+  "tipo": "parafraseada",
+  "doc": "biologia-celula",
+  "pergunta": "Por que o músculo tem tantas usinas de energia?",
+  "esperado": "Células com grande demanda de energia"
+ },
+ {
+  "tipo": "parafraseada",
+  "doc": "biologia-celula",
+  "pergunta": "Que erro na separação dos cromossomos provoca a trissomia do 21?",
+  "esperado": "não disjunção"
+ },
+ {
+  "tipo": "parafraseada",
+  "doc": "biologia-celula",
+  "pergunta": "Que estrutura guarda as enzimas que digerem o que está velho na célula?",
+  "esperado": "lisossomos, formados a partir do Golgi"
+ },
+ {
+  "tipo": "parafraseada",
+  "doc": "biologia-celula",
+  "pergunta": "Quanta energia se ganha quando não há oxigênio disponível?",
+  "esperado": "apenas 2 ATP"
+ },
+ {
+  "tipo": "parafraseada",
+  "doc": "historia-era-vargas",
+  "pergunta": "Por que São Paulo pegou em armas contra o governo em 1932?",
+  "esperado": "exigindo uma nova Constituição"
+ },
+ {
+  "tipo": "parafraseada",
+  "doc": "historia-era-vargas",
+  "pergunta": "Quem cuidava da censura e da imagem do presidente durante a ditadura?",
+  "esperado": "DIP, o Departamento de Imprensa"
+ },
+ {
+  "tipo": "parafraseada",
+  "doc": "historia-era-vargas",
+  "pergunta": "O que enfraqueceu o regime depois que o país entrou na guerra?",
+  "esperado": "A contradição de combater ditaduras"
+ },
+ {
+  "tipo": "parafraseada",
+  "doc": "historia-era-vargas",
+  "pergunta": "Quais benefícios o empregado passou a ter nas leis da época?",
+  "esperado": "salário mínimo, jornada de oito horas"
+ },
+ {
+  "tipo": "parafraseada",
+  "doc": "historia-era-vargas",
+  "pergunta": "Como o governo quis deixar de depender do café?",
+  "esperado": "substituição de importações"
+ },
+ {
+  "tipo": "parafraseada",
+  "doc": "historia-era-vargas",
+  "pergunta": "Quem morreu no atentado que acabou pressionando o presidente?",
+  "esperado": "major Rubens Vaz"
+ },
+ {
+  "tipo": "parafraseada",
+  "doc": "fisica-mecanica",
+  "pergunta": "Por que o passageiro é jogado para a frente quando o ônibus freia?",
+  "esperado": "lei da inércia"
+ },
+ {
+  "tipo": "parafraseada",
+  "doc": "fisica-mecanica",
+  "pergunta": "Como um foguete consegue subir?",
+  "esperado": "ele expulsa gases"
+ },
+ {
+  "tipo": "parafraseada",
+  "doc": "fisica-mecanica",
+  "pergunta": "O que acontece com a atração entre dois corpos se a distância entre eles dobra?",
+  "esperado": "cai para um quarto"
+ },
+ {
+  "tipo": "parafraseada",
+  "doc": "fisica-mecanica",
+  "pergunta": "Se a velocidade dobrar, o que acontece com a energia do movimento?",
+  "esperado": "multiplica a energia cinética por quatro"
+ },
+ {
+  "tipo": "parafraseada",
+  "doc": "fisica-mecanica",
+  "pergunta": "O planeta anda mais rápido perto ou longe do Sol?",
+  "esperado": "periélio"
+ },
+ {
+  "tipo": "parafraseada",
+  "doc": "fisica-mecanica",
+  "pergunta": "Em quanto tempo um carro a 20 m/s anda 100 metros?",
+  "esperado": "um carro a 20 m/s percorre 100 metros"
+ },
+ {
+  "tipo": "sem-relacao",
+  "doc": null,
+  "pergunta": "Qual é a melhor receita de bolo de cenoura?",
+  "esperado": null
+ },
+ {
+  "tipo": "sem-relacao",
+  "doc": null,
+  "pergunta": "Quem ganhou a Copa do Mundo de 2022?",
+  "esperado": null
+ },
+ {
+  "tipo": "sem-relacao",
+  "doc": null,
+  "pergunta": "Como faço um laço de repetição em Python?",
+  "esperado": null
+ },
+ {
+  "tipo": "sem-relacao",
+  "doc": null,
+  "pergunta": "Qual é a capital da Austrália?",
+  "esperado": null
+ },
+ {
+  "tipo": "sem-relacao",
+  "doc": null,
+  "pergunta": "Como funciona o bitcoin?",
+  "esperado": null
+ },
+ {
+  "tipo": "sem-relacao-parecida",
+  "doc": null,
+  "pergunta": "Como acontece a replicação do DNA no núcleo?",
+  "esperado": null
+ },
+ {
+  "tipo": "sem-relacao-parecida",
+  "doc": null,
+  "pergunta": "Quem foi Dom Pedro II e o que ele fez no Segundo Reinado?",
+  "esperado": null
+ },
+ {
+  "tipo": "sem-relacao-parecida",
+  "doc": null,
+  "pergunta": "Quando começou a ditadura militar de 1964?",
+  "esperado": null
+ },
+ {
+  "tipo": "sem-relacao-parecida",
+  "doc": null,
+  "pergunta": "O que diz a teoria da relatividade restrita de Einstein?",
+  "esperado": null
+ },
+ {
+  "tipo": "sem-relacao-parecida",
+  "doc": null,
+  "pergunta": "Como se resolve uma equação do segundo grau?",
+  "esperado": null
+ },
+ {
+  "tipo": "generica",
+  "doc": null,
+  "pergunta": "Resuma o arquivo",
+  "esperado": null
+ },
+ {
+  "tipo": "generica",
+  "doc": null,
+  "pergunta": "O que diz o documento que eu enviei?",
+  "esperado": null
+ }
+]

@@ -13,7 +13,7 @@ import { Chat, ChatDocument } from './schemas/chat.schema';
 import { ChatMessage } from './schemas/message.schema';
 import { ChatFile } from './schemas/chat-file.schema';
 import { StudyMaterial } from './schemas/study-material.schema';
-import { cosine, fuseRankings, mentionsMaterial, rankChunks } from './chunk-ranker';
+import { searchChunks } from './search';
 import { FileTextService } from './file-text.service';
 import { formatMemory, shouldUseMemory } from './chat-memory';
 import { EmbeddingService } from './embedding.service';
@@ -37,10 +37,6 @@ const HISTORY_WINDOW = 10; // últimas mensagens enviadas na íntegra
 const SUMMARY_BATCH = 10; // resume quando houver ao menos N msgs fora da janela
 const DAILY_MESSAGE_LIMIT = 100; // mensagens do aluno por dia
 const MAX_FILES_PER_CHAT = 5;
-const CONTEXT_CHUNKS = 4; // trechos de arquivo enviados por pergunta
-const SEARCH_POOL = 8; // candidatos de cada busca (palavras-chave e semântica) antes de juntar
-// Similaridade mínima (modelo e5-small, medida em testes): perguntas relacionadas ficam em 0,81–0,88 e sem relação em 0,77–0,81
-const SEMANTIC_MIN = 0.805;
 
 @Injectable()
 export class ChatService {
@@ -287,33 +283,13 @@ export class ChatService {
       if (!file.embeddings?.length && file.chunks.length) this.embedInBackground(file._id, file.chunks);
     }
 
-    const byKeyword = rankChunks(all, question, SEARCH_POOL);
-
-    let bySemantic: typeof all = [];
+    let query: number[] | undefined;
 
     if (all.some((chunk) => chunk.vector)) {
-      const [query] = (await this.embeddings.embed([question], 'query', false)) ?? [];
-
-      if (query) {
-        bySemantic = all
-          .filter((chunk) => chunk.vector)
-          .map((chunk) => ({ chunk, similarity: cosine(query, chunk.vector!) }))
-          .filter((item) => item.similarity >= SEMANTIC_MIN)
-          .sort((a, b) => b.similarity - a.similarity)
-          .slice(0, SEARCH_POOL)
-          .map((item) => item.chunk);
-      }
+      [query] = (await this.embeddings.embed([question], 'query', false)) ?? [];
     }
 
-    const found = fuseRankings([byKeyword, bySemantic], CONTEXT_CHUNKS).sort(
-      (x, y) => all.indexOf(x) - all.indexOf(y),
-    );
-
-    if (found.length > 0) return found;
-
-    // Pergunta genérica sobre o material ("resuma o arquivo"): usa o começo dele.
-    // Pergunta sem relação com o material: não manda trechos (economiza tokens e não mostra fonte falsa).
-    return mentionsMaterial(question) ? all.slice(0, CONTEXT_CHUNKS) : [];
+    return searchChunks(all, question, query);
   }
 
   // =========================

@@ -108,6 +108,21 @@ Environment variables:
 | `OCR` | Set to `off` to disable text recognition for scanned PDFs |
 | `EMBEDDINGS` | Set to `off` to disable semantic search (keyword search only) |
 
+### Measuring search quality
+
+`npm run eval:search` measures how well the material search finds the right passage. It needs
+no Groq key (only the search runs) and uses the same code as the chat (`src/chat/search.ts`).
+
+- `eval/search/docs/` – 3 sample documents (biology, history, physics), loaded as the passages of one chat.
+- `eval/search/perguntas.json` – 48 questions: literal and paraphrased ones with the expected passage,
+  unrelated ones (some on the same subject but absent from the material) and generic ones ("summarize the file").
+- The report compares keyword (BM25), semantic and hybrid search: hit at 1st place, hit among the 4 passages
+  sent to the AI, false positives (unrelated question that still gets passages), and a sweep of the
+  semantic threshold (`SEMANTIC_MIN`, currently `0.805`).
+- Flags: `-- --detalhes` lists every question, `-- --sem-embeddings` runs keyword search only (no model download).
+
+When you change the chunker, the ranking or the threshold, run it before and after and compare.
+
 ## Deploying
 
 `docs/DEPLOY.md` (in Portuguese) is the step-by-step guide to run everything on one Linux
