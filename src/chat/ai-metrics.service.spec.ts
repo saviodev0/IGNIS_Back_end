@@ -44,9 +44,12 @@ describe('AiMetricsService', () => {
     const before = Date.now();
     const summary = await new AiMetricsService({ find } as never).summary(7);
 
+    const after = Date.now();
+
+    // O limite do período é "agora - 7 dias", com "agora" lido entre `before` e `after`
     const { createdAt } = (find.mock.calls as any)[0][0];
-    expect(before - createdAt.$gte.getTime()).toBeGreaterThanOrEqual(7 * 86_400_000);
-    expect(before - createdAt.$gte.getTime()).toBeLessThan(7 * 86_400_000 + 5_000);
+    expect(createdAt.$gte.getTime()).toBeGreaterThanOrEqual(before - 7 * 86_400_000);
+    expect(createdAt.$gte.getTime()).toBeLessThanOrEqual(after - 7 * 86_400_000);
     expect(summary.answers).toBe(2);
     expect(summary.errorRatePercent).toBe(50);
   });
