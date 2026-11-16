@@ -33,3 +33,5 @@ export class ChatMessage {
 export const ChatMessageSchema = SchemaFactory.createForClass(ChatMessage);
 ChatMessageSchema.index({ chatId: 1, createdAt: 1 });
 ChatMessageSchema.index({ userId: 1, role: 1, createdAt: 1 });
+// Busca de texto nas conversas (`GET /chats/search`): `userId` na frente garante que cada aluno só varre as suas
+ChatMessageSchema.index({ userId: 1, content: 'text' }, { default_language: 'none', name: 'busca_mensagens' });

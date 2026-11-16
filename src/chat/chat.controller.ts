@@ -6,6 +6,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   Req,
   Res,
   StreamableFile,
@@ -29,6 +30,7 @@ import { CreateChatDto } from './dto/create-chat.dto';
 import { SendMessageDto } from './dto/send-message.dto';
 import { AddStudyTimeDto } from './dto/add-study-time.dto';
 import { RenameChatDto } from './dto/rename-chat.dto';
+import { SearchChatsDto } from './dto/search-chats.dto';
 import { SetFeedbackDto } from './dto/set-feedback.dto';
 
 @Controller('chats')
@@ -70,6 +72,13 @@ export class ChatController {
   @Get('usage')
   usage(@Req() request: any) {
     return this.usageService.today(request.user.sub);
+  }
+
+  // Também precisa vir antes de `:id`
+  @Throttle({ default: { limit: 60, ttl: 60_000 } })
+  @Get('search')
+  search(@Req() request: any, @Query() query: SearchChatsDto) {
+    return this.chatService.search(request.user.sub, query.q);
   }
 
   @Get(':id')

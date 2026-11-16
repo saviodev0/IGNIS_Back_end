@@ -22,6 +22,7 @@ import { GoalsService } from '../goals/goals.service';
 import { GoalCommand, GoalType, goalLabel, parseGoalCommand } from './goal-command';
 import { AiMetricsService } from './ai-metrics.service';
 import type { Feedback } from './dto/set-feedback.dto';
+import { buildTextSearch, makeSnippet, SEARCH_MAX_CHATS, SEARCH_MAX_SNIPPETS_PER_CHAT, searchTerms } from './chat-search';
 import { errorLabel, MetricTimer } from './ai-metrics';
 import { UsageService } from './usage.service';
 import { TokenUsage } from './usage';
@@ -92,6 +93,80 @@ export class ChatService {
       .limit(100)
       .select('title studyMinutes createdAt updatedAt')
       .lean();
+  }
+
+  /**
+   * Busca nos títulos e nas mensagens do aluno (só nos dele). Ignora acentos e maiúsculas e acha variações da
+   * palavra no plural ("mitocôndria" acha "mitocôndrias"), mas não pedaços dela ("mito"). Usa o índice de texto, então
+   * não varre a coleção. Devolve até 20 chats, os mais relevantes primeiro, cada um com até 3 trechos.
+   */
+  async search(userId: string, q: string) {
+    const terms = searchTerms(q);
+    const text = buildTextSearch(q);
+    if (!text) return [];
+    const score = { score: { $meta: 'textScore' as const } };
+
+    const [titles, messages] = await Promise.all([
+      this.chats
+        .find({ userId, $text: { $search: text } }, score)
+        .sort(score)
+        .limit(SEARCH_MAX_CHATS)
+        .select('title updatedAt')
+        .lean(),
+      this.messages
+        .find({ userId, $text: { $search: text } }, score)
+        .sort(score)
+        .limit(SEARCH_MAX_CHATS * SEARCH_MAX_SNIPPETS_PER_CHAT * 4)
+        .select('chatId role content createdAt')
+        .lean(),
+    ]);
+
+    type Result = {
+      chatId: string;
+      title: string;
+      updatedAt: Date;
+      titleMatch: boolean;
+      matches: { messageId: string; role: 'user' | 'assistant'; snippet: string }[];
+    };
+    const found = new Map<string, Result>();
+
+    for (const chat of titles) {
+      found.set(String(chat._id), { chatId: String(chat._id), title: chat.title, updatedAt: (chat as any).updatedAt, titleMatch: true, matches: [] });
+    }
+
+    for (const message of messages) {
+      const chatId = String(message.chatId);
+      let result = found.get(chatId);
+
+      if (!result) {
+        if (found.size >= SEARCH_MAX_CHATS) continue;
+        result = { chatId, title: '', updatedAt: new Date(0), titleMatch: false, matches: [] };
+        found.set(chatId, result);
+      }
+
+      if (result.matches.length < SEARCH_MAX_SNIPPETS_PER_CHAT) {
+        result.matches.push({ messageId: String(message._id), role: message.role, snippet: makeSnippet(message.content, terms) });
+      }
+    }
+
+    // Chats achados só por mensagem ainda não têm título nem data
+    const missing = [...found.values()].filter((result) => !result.title);
+    if (missing.length) {
+      const info = await this.chats
+        .find({ userId, _id: { $in: missing.map((result) => result.chatId) } })
+        .select('title updatedAt')
+        .lean();
+
+      for (const chat of info) {
+        const result = found.get(String(chat._id));
+        if (!result) continue;
+
+        result.title = chat.title;
+        result.updatedAt = (chat as any).updatedAt;
+      }
+    }
+
+    return [...found.values()].slice(0, SEARCH_MAX_CHATS);
   }
 
   async get(userId: string, chatId: string) {

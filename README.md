@@ -129,6 +129,18 @@ no Groq key (only the search runs) and uses the same code as the chat (`src/chat
 
 The questions are split into `ajuste` (used to choose the thresholds) and `prova` (never used for tuning, kept as an independent check). When you change the chunker, the ranking or the thresholds, run it before and after and compare.
 
+### Searching conversations
+
+`GET /chats/search?q=` looks in the student's own chat titles and messages and returns up to 20 chats (most relevant
+first), each with up to 3 snippets around the match (`matches[].snippet`, with `messageId` and `role`) and `titleMatch`.
+`q` needs at least 2 characters (otherwise `400`). It ignores accents and case and also finds the plural
+(`mitocondria` finds `mitocôndrias`, `proclamacao` finds `proclamações`), but not pieces of a word (`mito`). It uses
+a MongoDB text index with `userId` as its prefix (`busca_mensagens`, `busca_titulos`), so it never scans the whole
+collection nor another student's data. The indexes use `default_language: 'none'` on purpose: Mongo stems words
+*before* removing accents, which made `proclamacao` miss `proclamação`; plurals are covered by sending simple
+variants in the query. Indexes are built on startup (`autoIndex`); on an existing database the first start may take a
+moment while the messages are indexed.
+
 ### Rating answers (👍/👎)
 
 `PATCH /chats/:id/messages/:messageId/feedback` with `{ "feedback": "up" | "down" | null }` (`null` removes the rating).
