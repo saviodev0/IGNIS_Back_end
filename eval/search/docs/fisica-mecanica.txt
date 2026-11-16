@@ -1,0 +1,34 @@
+CAPÍTULO 1 – CINEMÁTICA
+
+1.1 Movimento uniforme
+No movimento uniforme (MU) a velocidade é constante e a aceleração é nula. A posição varia linearmente com o tempo segundo a função horária S = S0 + v·t. Por exemplo, um carro a 20 m/s percorre 100 metros em 5 segundos. A velocidade média é a razão entre o deslocamento e o intervalo de tempo.
+
+1.2 Movimento uniformemente variado
+No movimento uniformemente variado (MUV) a aceleração é constante. As equações são v = v0 + a·t e S = S0 + v0·t + a·t²/2. A equação de Torricelli, v² = v0² + 2·a·ΔS, relaciona velocidade e deslocamento sem usar o tempo. Na queda livre, desprezando a resistência do ar, todos os corpos caem com a aceleração da gravidade, g, de cerca de 9,8 m/s², independente da massa.
+
+CAPÍTULO 2 – LEIS DE NEWTON
+
+2.1 Primeira lei: inércia
+A primeira lei de Newton, ou lei da inércia, diz que um corpo em repouso permanece em repouso e um corpo em movimento permanece em movimento retilíneo uniforme, a menos que uma força resultante atue sobre ele. É por isso que os passageiros são jogados para frente quando o ônibus freia de repente. Quanto maior a massa, maior a inércia.
+
+2.2 Segunda lei: princípio fundamental
+A segunda lei afirma que a força resultante sobre um corpo é igual ao produto da massa pela aceleração: F = m·a. A unidade de força no Sistema Internacional é o newton (N), igual a 1 kg·m/s². Um bloco de 5 kg submetido a uma força resultante de 20 N adquire aceleração de 4 m/s².
+
+2.3 Terceira lei: ação e reação
+A terceira lei diz que, quando um corpo exerce uma força sobre outro, o segundo exerce sobre o primeiro uma força de mesma intensidade, mesma direção e sentido oposto. As forças de ação e reação atuam em corpos diferentes, por isso nunca se anulam. É o princípio que permite a um foguete subir: ele expulsa gases para baixo e é empurrado para cima.
+
+CAPÍTULO 3 – ENERGIA E TRABALHO
+
+3.1 Trabalho e energia cinética
+O trabalho de uma força constante é o produto da força pelo deslocamento e pelo cosseno do ângulo entre eles: W = F·d·cosθ, medido em joules (J). A energia cinética de um corpo é Ec = m·v²/2, e o teorema da energia cinética diz que o trabalho da força resultante é igual à variação da energia cinética. Dobrar a velocidade multiplica a energia cinética por quatro.
+
+3.2 Energia potencial e conservação
+A energia potencial gravitacional é Ep = m·g·h, e a energia potencial elástica de uma mola é Ee = k·x²/2, onde k é a constante elástica. Em sistemas conservativos, sem atrito, a energia mecânica, soma da cinética com a potencial, permanece constante. Em uma montanha-russa sem atrito, a energia potencial no ponto mais alto se converte em cinética no ponto mais baixo. Com atrito, parte da energia se transforma em calor.
+
+CAPÍTULO 4 – GRAVITAÇÃO
+
+4.1 Lei da gravitação universal
+Newton propôs que a força de atração gravitacional entre duas massas é diretamente proporcional ao produto das massas e inversamente proporcional ao quadrado da distância entre elas: F = G·M·m/d². A constante G vale aproximadamente 6,67 × 10⁻¹¹ N·m²/kg². Se a distância entre dois corpos dobra, a força cai para um quarto.
+
+4.2 Leis de Kepler
+A primeira lei de Kepler diz que os planetas descrevem órbitas elípticas com o Sol em um dos focos. A segunda lei afirma que a linha que liga o planeta ao Sol varre áreas iguais em tempos iguais, o que significa que o planeta é mais rápido quando está mais perto do Sol, no periélio. A terceira lei relaciona o quadrado do período orbital ao cubo do raio médio da órbita.

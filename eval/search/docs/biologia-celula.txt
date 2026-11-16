@@ -1,0 +1,34 @@
+CAPÍTULO 1 – A CÉLULA
+
+1.1 Teoria celular
+A teoria celular afirma que todos os seres vivos são formados por células, que a célula é a unidade básica de estrutura e função da vida e que toda célula se origina de outra célula preexistente. Robert Hooke observou células pela primeira vez em 1665, ao examinar cortiça ao microscópio. Mais tarde, Schleiden e Schwann propuseram que plantas e animais eram constituídos por células, e Virchow completou a teoria ao afirmar que células só surgem de outras células.
+
+1.2 Células procariontes e eucariontes
+As células procariontes, como as das bactérias, não possuem núcleo delimitado por membrana: o material genético fica solto no citoplasma, em uma região chamada nucleoide. Têm poucas organelas e ribossomos pequenos. As células eucariontes, presentes em animais, plantas, fungos e protozoários, possuem núcleo verdadeiro com carioteca e várias organelas membranosas. As células eucariontes costumam ser cem vezes maiores que as procariontes, e essa diferença de tamanho exige uma divisão de trabalho entre as organelas.
+
+CAPÍTULO 2 – ORGANELAS E MEMBRANA
+
+2.1 Membrana plasmática
+A membrana plasmática é formada por uma bicamada de fosfolipídios com proteínas inseridas, descrita pelo modelo do mosaico fluido. Ela controla a entrada e a saída de substâncias, por isso é chamada de seletivamente permeável. No transporte passivo, como a difusão simples e a osmose, não há gasto de energia, pois as substâncias se movem a favor do gradiente de concentração. No transporte ativo, como a bomba de sódio e potássio, a célula gasta ATP para mover íons contra o gradiente.
+
+2.2 Mitocôndrias
+As mitocôndrias são as organelas responsáveis pela respiração celular aeróbica, processo que converte a glicose em ATP, a moeda de energia da célula. Possuem membrana dupla e DNA próprio, o que sustenta a teoria endossimbiótica, segundo a qual as mitocôndrias descendem de bactérias que passaram a viver dentro de outras células. Células com grande demanda de energia, como as musculares, têm muitas mitocôndrias.
+
+2.3 Retículo endoplasmático e complexo golgiense
+O retículo endoplasmático rugoso é coberto por ribossomos e participa da produção de proteínas, enquanto o retículo liso sintetiza lipídios e desintoxica a célula. O complexo golgiense recebe as proteínas produzidas, modifica, empacota e envia para o destino final, dentro ou fora da célula. Os lisossomos, formados a partir do Golgi, contêm enzimas digestivas que degradam substâncias e organelas velhas.
+
+CAPÍTULO 3 – ENERGIA
+
+3.1 Fotossíntese
+A fotossíntese ocorre nos cloroplastos das células vegetais e das algas. Com a energia da luz absorvida pela clorofila, a planta transforma gás carbônico e água em glicose e libera oxigênio. A equação resumida é: 6 CO2 + 6 H2O + luz resulta em C6H12O6 + 6 O2. A etapa clara acontece nos tilacoides e produz ATP e NADPH; a etapa química, conhecida como ciclo de Calvin, acontece no estroma e usa essas moléculas para fabricar açúcar.
+
+3.2 Respiração celular
+A respiração celular tem três etapas: a glicólise, que ocorre no citoplasma e quebra a glicose em duas moléculas de piruvato; o ciclo de Krebs, na matriz mitocondrial; e a cadeia respiratória, nas cristas mitocondriais, onde se forma a maior parte do ATP. Cada molécula de glicose rende cerca de 30 a 32 ATP na respiração aeróbica. Na fermentação, sem oxigênio, o saldo é de apenas 2 ATP por glicose.
+
+CAPÍTULO 4 – DIVISÃO CELULAR
+
+4.1 Mitose
+A mitose é a divisão que origina duas células-filhas geneticamente idênticas à célula-mãe e serve para crescimento e regeneração de tecidos. Suas fases são prófase, metáfase, anáfase e telófase. Na metáfase os cromossomos se alinham no plano equatorial da célula, e na anáfase as cromátides-irmãs são puxadas para polos opostos pelas fibras do fuso.
+
+4.2 Meiose
+A meiose reduz o número de cromossomos à metade e origina quatro células haploides, os gametas. Ocorre em duas divisões seguidas. Na prófase I acontece o crossing-over, a troca de pedaços entre cromossomos homólogos, que aumenta a variabilidade genética da espécie. Falhas na separação dos cromossomos, chamadas de não disjunção, causam alterações como a síndrome de Down, em que há três cópias do cromossomo 21.
