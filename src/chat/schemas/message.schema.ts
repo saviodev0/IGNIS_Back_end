@@ -21,6 +21,10 @@ export class ChatMessage {
   @Prop({ type: [{ file: String, page: Number, _id: false }], default: [] })
   sources!: { file: string; page?: number }[];
 
+  // Avaliação do aluno sobre a resposta da IA (👍 = up, 👎 = down); ausente = sem avaliação
+  @Prop({ type: String, enum: ['up', 'down'], default: undefined })
+  feedback?: 'up' | 'down';
+
   // Respondida direto do banco, sem chamar a IA (não conta no limite diário)
   @Prop({ default: false })
   direct!: boolean;

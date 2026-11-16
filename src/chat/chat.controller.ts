@@ -29,6 +29,7 @@ import { CreateChatDto } from './dto/create-chat.dto';
 import { SendMessageDto } from './dto/send-message.dto';
 import { AddStudyTimeDto } from './dto/add-study-time.dto';
 import { RenameChatDto } from './dto/rename-chat.dto';
+import { SetFeedbackDto } from './dto/set-feedback.dto';
 
 @Controller('chats')
 @UseGuards(AuthGuard)
@@ -93,6 +94,18 @@ export class ChatController {
     @Body() dto: AddStudyTimeDto,
   ) {
     return this.chatService.addStudyTime(request.user.sub, id, dto.minutes);
+  }
+
+  // 👍/👎 numa resposta da IA; `{ "feedback": null }` remove a avaliação
+  @Throttle({ default: { limit: 60, ttl: 60_000 } })
+  @Patch(':id/messages/:messageId/feedback')
+  setFeedback(
+    @Req() request: any,
+    @Param('id') id: string,
+    @Param('messageId') messageId: string,
+    @Body() dto: SetFeedbackDto,
+  ) {
+    return this.chatService.setFeedback(request.user.sub, id, messageId, dto.feedback);
   }
 
   @Throttle({ default: { limit: 10, ttl: 60_000 } })

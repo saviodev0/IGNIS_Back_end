@@ -1,6 +1,6 @@
 import { HttpException, ServiceUnavailableException } from '@nestjs/common';
 
-import { AiMetricRow, errorLabel, MetricTimer, percentile, summarizeMetrics } from './ai-metrics';
+import { AiMetricRow, errorLabel, MetricTimer, percentile, summarizeFeedback, summarizeMetrics } from './ai-metrics';
 
 const row = (over: Partial<AiMetricRow> = {}): AiMetricRow => ({
   model: 'modelo-a',
@@ -158,5 +158,23 @@ describe('errorLabel', () => {
     expect(errorLabel(Object.assign(new Error('x'), { name: 'AbortError' }))).toBe('tempo_esgotado');
     expect(errorLabel(new Error('qualquer coisa com conteúdo'))).toBe('erro_interno');
     expect(errorLabel('texto solto')).toBe('erro_interno');
+  });
+});
+
+describe('summarizeFeedback', () => {
+  it('conta avaliadas, % avaliadas e % de 👎 entre as avaliadas', () => {
+    expect(summarizeFeedback({ answers: 20, up: 6, down: 2 })).toEqual({
+      answers: 20,
+      rated: 8,
+      up: 6,
+      down: 2,
+      ratedPercent: 40,
+      downPercentOfRated: 25,
+    });
+  });
+
+  it('sem respostas ou sem avaliações: percentuais nulos, sem dividir por zero', () => {
+    expect(summarizeFeedback({ answers: 0, up: 0, down: 0 })).toMatchObject({ ratedPercent: null, downPercentOfRated: null });
+    expect(summarizeFeedback({ answers: 5, up: 0, down: 0 })).toMatchObject({ rated: 0, ratedPercent: 0, downPercentOfRated: null });
   });
 });

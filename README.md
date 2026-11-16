@@ -129,6 +129,13 @@ no Groq key (only the search runs) and uses the same code as the chat (`src/chat
 
 The questions are split into `ajuste` (used to choose the thresholds) and `prova` (never used for tuning, kept as an independent check). When you change the chunker, the ranking or the thresholds, run it before and after and compare.
 
+### Rating answers (👍/👎)
+
+`PATCH /chats/:id/messages/:messageId/feedback` with `{ "feedback": "up" | "down" | null }` (`null` removes the rating).
+Only the chat owner can rate, and only AI answers (not the student's own messages nor answers built straight from the
+database, like "goal created"). Omitting the field is a `400`, so a mistake never erases a rating. The rating comes back
+in `GET /chats/:id` as `feedback` on each AI message (`null` when unrated), and the metrics summary counts them (below).
+
 ### AI backup provider
 
 If the main model fails with `429`, `408`, `5xx`, a network error or a timeout before it starts answering,
@@ -152,7 +159,7 @@ The team reads the summary with the `METRICS_TOKEN` from `.env` (students cannot
 curl -H "x-metrics-token: $METRICS_TOKEN" "https://api.example.com/metrics/ai?days=7"   # days: 1 to 90, default 7
 ```
 
-It returns answers, errors and error rate (by type), average and p95 of time to first text and total time (successful
+It returns answers, errors and error rate (by type), the 👍/👎 count (`feedback`: rated, up, down, % rated, % of 👎 among rated), average and p95 of time to first text and total time (successful
 answers only), % without source (overall and only in chats that have files), % answered by the backup, average tokens and a
 per-model breakdown. Answers the student cancelled are counted apart and left out of rates and times.
 
