@@ -1,4 +1,16 @@
-import { CONTEXT_CHUNKS, KEYWORD_MIN_COVERAGE, SEMANTIC_MIN, keywordSearch, rankedSearch, searchChunks, semanticSearch } from './search';
+import {
+  CONTEXT_CHARS,
+  CONTEXT_CHUNKS,
+  KEYWORD_MIN_COVERAGE,
+  MAX_CONTEXT_CHUNKS,
+  SEMANTIC_MIN,
+  keywordSearch,
+  pickContext,
+  rankedSearch,
+  repeats,
+  searchChunks,
+  semanticSearch,
+} from './search';
 
 const chunk = (text: string, vector?: number[]) => ({ text, vector });
 
@@ -42,8 +54,15 @@ describe('search', () => {
   });
 
   it('searchChunks usa o começo do material em pergunta genérica', () => {
-    const muitos = Array.from({ length: 10 }, (_, i) => chunk(`parágrafo ${i} sobre assuntos variados`));
+    const muitos = Array.from({ length: 10 }, (_, i) => chunk(`parágrafo ${i} sobre assuntos variados `.repeat(30)));
     expect(searchChunks(muitos, 'resuma o arquivo', null)).toEqual(muitos.slice(0, CONTEXT_CHUNKS));
+  });
+
+  it('searchChunks usa mais trechos quando eles são curtos (slides)', () => {
+    const slides = Array.from({ length: 20 }, (_, i) => chunk(`slide ${i} fala de um assunto diferente número ${i * 7}`));
+    const resultado = searchChunks(slides, 'resuma o arquivo', null);
+    expect(resultado.length).toBeGreaterThan(CONTEXT_CHUNKS);
+    expect(resultado.length).toBeLessThanOrEqual(MAX_CONTEXT_CHUNKS);
   });
 
   it('searchChunks sem trechos devolve vazio', () => {
@@ -71,5 +90,45 @@ describe('search', () => {
   it('os limiares padrão são os medidos pelo eval', () => {
     expect(SEMANTIC_MIN).toBe(0.83);
     expect(KEYWORD_MIN_COVERAGE).toBe(0.3);
+  });
+
+  describe('repeats', () => {
+    it('slide que a página seguinte repete por inteiro conta como repetido, ignorando o número do slide', () => {
+      expect(repeats('A pilha guarda onde parou\nA recursão usa a pilha 5', 'A pilha guarda onde parou\nA recursão usa a pilha 5\nIsso explica a pilha 6')).toBe(true);
+    });
+
+    it('textos diferentes não são repetição, e textos curtíssimos nunca são', () => {
+      expect(repeats('A mitocôndria produz energia para a célula viva.', 'O cloroplasto faz a fotossíntese nas plantas verdes.')).toBe(false);
+      expect(repeats('1', 'qualquer coisa com 1 dentro')).toBe(false);
+    });
+  });
+
+  describe('pickContext', () => {
+    const slide = (text: string) => chunk(text);
+    const a = slide('Passo um do slide com uma explicação longa o bastante para contar');
+    const b = slide('Passo um do slide com uma explicação longa o bastante para contar\nPasso dois acrescentado depois');
+    const c = slide('Outro assunto totalmente diferente sobre pilhas e autômatos de pilha');
+
+    it('fica com a versão mais completa do slide e descarta a repetida', () => {
+      expect(pickContext([a, b, c], 2, 0)).toEqual([b, c]);
+      expect(pickContext([b, a, c], 2, 0)).toEqual([b, c]);
+    });
+
+    it('sempre devolve o mínimo de trechos pedido', () => {
+      const textos = ['alfa beta gama delta épsilon zeta eta teta', 'iota capa lambda mi ni csi ômicron pi', 'rô sigma tau ípsilon fi qui psi ômega', 'um dois três quatro cinco seis sete oito', 'nove dez onze doze treze catorze quinze'];
+      expect(pickContext(textos.map(slide), 4, 0)).toHaveLength(4);
+    });
+
+    it('para quando o mínimo foi atingido e o contexto já passou do limite de caracteres', () => {
+      const grandes = Array.from({ length: 8 }, (_, i) => slide(`trecho grande ${i} `.repeat(100)));
+      expect(pickContext(grandes)).toHaveLength(CONTEXT_CHUNKS);
+    });
+
+    it('junta mais trechos curtos até chegar ao limite de caracteres', () => {
+      const curtos = Array.from({ length: 12 }, (_, i) => slide(`slide curto ${i} com um assunto bem diferente ${'x'.repeat(i)} fim`));
+      const total = pickContext(curtos).reduce((soma, t) => soma + t.text.length, 0);
+      expect(pickContext(curtos).length).toBeGreaterThan(CONTEXT_CHUNKS);
+      expect(total).toBeLessThan(CONTEXT_CHARS);
+    });
   });
 });

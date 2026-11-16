@@ -14,8 +14,10 @@ import { splitIntoChunks } from '../../src/chat/chunker';
 import { cosine } from '../../src/chat/chunk-ranker';
 import { EmbeddingService } from '../../src/chat/embedding.service';
 import {
+  CONTEXT_CHARS,
   CONTEXT_CHUNKS,
   KEYWORD_MIN_COVERAGE,
+  MAX_CONTEXT_CHUNKS,
   SEMANTIC_MIN,
   keywordSearch,
   rankedSearch,
@@ -98,7 +100,7 @@ async function main() {
     `  ${relacionadas.length} relacionadas (${relacionadas.filter((p) => p.tipo === 'literal').length} literais + ${relacionadas.filter((p) => p.tipo === 'parafraseada').length} parafraseadas), ` +
       `${semRelacao.length} sem relação, ${genericas.length} genéricas`,
   );
-  console.log(`Chat envia até ${CONTEXT_CHUNKS} trechos por pergunta | limiar semântico atual: ${SEMANTIC_MIN} | cobertura mínima das palavras: ${KEYWORD_MIN_COVERAGE}`);
+  console.log(`Chat envia de ${CONTEXT_CHUNKS} a ${MAX_CONTEXT_CHUNKS} trechos por pergunta (mais quando são curtos, até ${CONTEXT_CHARS} caracteres) | limiar semântico atual: ${SEMANTIC_MIN} | cobertura mínima das palavras: ${KEYWORD_MIN_COVERAGE}`);
   console.log(semEmbeddings ? 'Modo: só palavras-chave (--sem-embeddings)\n' : 'Modelo: Xenova/multilingual-e5-small\n');
 
   const metodos: { nome: string; ranque: (p: Pergunta) => Trecho[]; enviados: (p: Pergunta) => Trecho[] }[] = [
@@ -130,7 +132,7 @@ async function main() {
   ];
 
   console.log('ACERTO (a resposta está nos trechos escolhidos)');
-  console.log(`${''.padEnd(26)}${'no 1º lugar'.padEnd(14)}${`entre os ${CONTEXT_CHUNKS} enviados`.padEnd(20)}`);
+  console.log(`${''.padEnd(26)}${'no 1º lugar'.padEnd(14)}${'entre os enviados'.padEnd(20)}`);
   for (const metodo of metodos) {
     console.log(metodo.nome);
     for (const [rotulo, lista] of grupos) {
@@ -149,12 +151,17 @@ async function main() {
   }
 
   const hibrida = metodos[metodos.length - 1];
+  const tamanho = relacionadas.map((p) => hibrida.enviados(p));
+  const mediaTrechos = tamanho.reduce((total, lista) => total + lista.length, 0) / tamanho.length;
+  const mediaCaracteres = tamanho.reduce((total, lista) => total + lista.reduce((soma, t) => soma + t.text.length, 0), 0) / tamanho.length;
+  console.log(`\nCONTEXTO ENVIADO À IA (busca híbrida, perguntas relacionadas): ${mediaTrechos.toFixed(1)} trechos, ${Math.round(mediaCaracteres)} caracteres em média`);
+
   const genericasOk = genericas.filter((p) => hibrida.enviados(p).length > 0).length;
   console.log(`\nPERGUNTAS GENÉRICAS ("resuma o arquivo") recebem o começo do material: ${genericasOk}/${genericas.length}`);
 
   if (!semEmbeddings) {
     console.log('\nLIMIAR DA BUSCA SEMÂNTICA (busca híbrida; o limiar atual está marcado com *)');
-    console.log(`  ${'limiar'.padEnd(9)}${`acerto (${CONTEXT_CHUNKS} enviados)`.padEnd(20)}falsos positivos`);
+    console.log(`  ${'limiar'.padEnd(9)}${'acerto (enviados)'.padEnd(20)}falsos positivos`);
     const limiares = [...new Set([0.78, 0.79, 0.795, 0.8, 0.805, 0.81, 0.815, 0.82, SEMANTIC_MIN, 0.84, 0.85])].sort((a, b) => a - b);
     for (const limiar of limiares) {
       const acertos = relacionadas.filter((p) => contem(searchChunks(trechos, p.pergunta, consulta(p.pergunta), limiar), p.esperado!)).length;
