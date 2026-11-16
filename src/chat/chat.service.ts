@@ -405,17 +405,24 @@ export class ChatService {
   /**
    * Salva a mensagem do aluno, chama a IA e devolve os pedaços da resposta.
    * A resposta completa é salva no Mongo ao final (ou parcial, se o aluno cancelar).
+   *
+   * Com `replaceLast`, a nova pergunta e a nova resposta trocam a última pergunta e a última resposta da IA
+   * (regenerar ou editar a pergunta). O par antigo só é apagado quando chega resposta nova: se a IA falhar, o
+   * aluno continua com o que já tinha. Nesse modo tudo vai para a IA, sem os atalhos de "criar meta", "estudei 2h"
+   * e perguntas sobre os próprios números, que têm efeito próprio e não podem ser refeitos.
    */
   async *sendMessage(
     userId: string,
     chatId: string,
     content: string,
     signal?: AbortSignal,
+    options: { replaceLast?: boolean } = {},
   ): AsyncGenerator<ChatEvent> {
     const chat = await this.getOwned(userId, chatId);
+    const replaced = options.replaceLast ? await this.lastAiExchange(chat._id) : [];
 
     // "Criar meta semanal de 10h": cria a meta no app, sem usar a IA
-    const goalCommand = parseGoalCommand(content);
+    const goalCommand = options.replaceLast ? null : parseGoalCommand(content);
 
     if (goalCommand) {
       const answer = await this.createGoalFromChat(userId, goalCommand);
@@ -433,7 +440,7 @@ export class ChatService {
     }
 
     // "Estudei 2h": soma ao tempo de estudo deste conteúdo, sem usar a IA
-    const loggedMinutes = this.intentRouter.detectStudyLog(content);
+    const loggedMinutes = options.replaceLast ? null : this.intentRouter.detectStudyLog(content);
 
     if (loggedMinutes) {
       chat.studyMinutes += loggedMinutes;
@@ -453,7 +460,7 @@ export class ChatService {
     }
 
     // Perguntas sobre os próprios números do aluno: responde direto do banco, sem IA
-    const intents = this.intentRouter.detect(content);
+    const intents = options.replaceLast ? null : this.intentRouter.detect(content);
 
     if (intents) {
       const answer = await this.directAnswer.answer(userId, intents).catch((error) => {
@@ -502,7 +509,7 @@ export class ChatService {
     await this.usage.assertWithinLimit(userId);
 
     const previous = await this.messages
-      .find({ chatId: chat._id })
+      .find({ chatId: chat._id, _id: { $nin: replaced } })
       .sort({ createdAt: -1, _id: -1 })
       .limit(HISTORY_WINDOW)
       .select('role content')
@@ -602,6 +609,8 @@ export class ChatService {
 
       if (answer) {
         await this.messages.create({ chatId: chat._id, userId, role: 'assistant', content: answer, sources });
+        // Chegou resposta nova: agora sim sai o par antigo (com a avaliação 👍/👎 dele)
+        if (replaced.length) await this.messages.deleteMany({ _id: { $in: replaced } });
       } else {
         // Sem resposta (erro da IA/cancelado): descarta a pergunta para o aluno poder reenviar
         await userMessage.deleteOne();
@@ -613,6 +622,26 @@ export class ChatService {
         this.logger.warn(`Falha ao resumir chat ${chat._id}: ${error.message}`),
       );
     }
+  }
+
+  /**
+   * Ids da última pergunta e da última resposta da IA do chat, para `replaceLast`.
+   * Só vale se a última troca foi com a IA: respostas montadas direto do banco (criar meta, registrar estudo)
+   * têm efeito próprio e não são refeitas.
+   */
+  private async lastAiExchange(chatId: Types.ObjectId): Promise<Types.ObjectId[]> {
+    const [last, before] = await this.messages
+      .find({ chatId })
+      .sort({ createdAt: -1, _id: -1 })
+      .limit(2)
+      .select('role direct')
+      .lean();
+
+    if (last?.role !== 'assistant' || last.direct || before?.role !== 'user' || before.direct) {
+      throw new BadRequestException('Só é possível refazer uma resposta da IA, e só a última.');
+    }
+
+    return [before._id, last._id] as Types.ObjectId[];
   }
 
   private async createGoalFromChat(userId: string, command: GoalCommand): Promise<string> {

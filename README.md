@@ -129,6 +129,16 @@ no Groq key (only the search runs) and uses the same code as the chat (`src/chat
 
 The questions are split into `ajuste` (used to choose the thresholds) and `prova` (never used for tuning, kept as an independent check). When you change the chunker, the ranking or the thresholds, run it before and after and compare.
 
+### Redoing the last answer / editing the last question
+
+`POST /chats/:id/messages` accepts `"replaceLast": true`. The new question and the new AI answer **replace** the last
+question and the last AI answer (regenerate = send the same question again; edit = send the corrected text). The old
+pair is deleted only after the new answer arrives, so if the AI fails the student keeps what they had, and the old
+answer's 👍/👎 goes away with it. The AI does not receive the old pair as context. It is refused with `400` when the
+last exchange was not with the AI (nothing to redo, or answered straight from the database like "create goal" /
+"studied 2h"); in this mode the shortcuts for goals, study time and own-numbers questions are off, since they have
+effects of their own that cannot be redone. A cancelled answer that already has some text replaces the old one.
+
 ### Searching conversations
 
 `GET /chats/search?q=` looks in the student's own chat titles and messages and returns up to 20 chats (most relevant
