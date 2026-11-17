@@ -65,18 +65,13 @@ export class StudyCyclesController {
   }
 
   @Post(':id/complete')
-@UseGuards(AuthGuard)
-async complete(
-  @Req() request: any,
-  @Param('id') id: string,
-) {
-  return this.studyCyclesService.complete(
-    Number(id),
-    request.user.sub,
-  );
-
-  
-}
+  @UseGuards(AuthGuard)
+  async complete(
+    @Req() request: any,
+    @Param('id', ParseIntPipe) id: number,
+  ) {
+    return this.studyCyclesService.complete(id, request.user.sub);
+  }
 
 
 @Get('history')

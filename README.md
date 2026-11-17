@@ -91,6 +91,10 @@ totals include completed sessions only.
 cycles within each goal's date range. `GET /achievements` includes the persisted
 `unlockedAt` timestamp, or `null` for locked achievements.
 
+`POST /goals` takes exactly `{ "type": "DAILY" | "WEEKLY" | "MONTHLY", "targetMinutes": <integer from 1 to 2147483647> }`;
+anything else (unknown type, decimals, text, zero, negatives, extra fields) is a `400` with a single clear message.
+The `:id` of `POST /study-cycles/:id/complete` must be an integer (`400` otherwise), like `pause` and `resume`.
+
 ## AI chat
 
 Authenticated students chat with an AI about their study material (`/chats`).
