@@ -14,6 +14,7 @@ import type { Response } from 'express';
 
 import { AuthService } from './auth.service';
 import { AuthGuard } from './guards/auth.guard';
+import type { AuthenticatedRequest } from '../auth/authenticated-request';
 import { CreateUserDto } from '../users/dto/create-user.dto';
 import { authCookieOptions } from '../config/env';
 
@@ -51,7 +52,7 @@ export class AuthController {
 
   @Get('me')
   @UseGuards(AuthGuard)
-  async me(@Req() request: any) {
+  async me(@Req() request: AuthenticatedRequest) {
     return this.authService.getMe(
       request.user.sub,
     );

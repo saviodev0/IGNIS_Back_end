@@ -12,6 +12,7 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UsersService } from './users.service';
 import { AuthGuard } from '../auth/guards/auth.guard';
+import type { AuthenticatedRequest } from '../auth/authenticated-request';
 import { UpdatePasswordDto } from './dto/update-password.dto';
 import { RankingQueryDto } from './dto/ranking-query.dto';
 
@@ -32,14 +33,14 @@ export class UsersController {
 
   @Get('me/stats')
   @UseGuards(AuthGuard)
-  async getStats(@Req() request: any) {
+  async getStats(@Req() request: AuthenticatedRequest) {
     return this.usersService.getStats(request.user.sub);
   }
 
   @Get('ranking')
   @UseGuards(AuthGuard)
   async ranking(
-    @Req() request: any,
+    @Req() request: AuthenticatedRequest,
     @Query() query: RankingQueryDto,
   ) {
     return this.usersService.ranking(request.user.sub, query);
@@ -47,7 +48,7 @@ export class UsersController {
 
   @Patch('me')
   @UseGuards(AuthGuard)
-  async update(@Req() request: any, @Body() updateUserDto: UpdateUserDto) {
+  async update(@Req() request: AuthenticatedRequest, @Body() updateUserDto: UpdateUserDto) {
     return this.usersService.update(request.user.sub, updateUserDto);
   }
 }
