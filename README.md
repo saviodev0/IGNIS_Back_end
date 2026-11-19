@@ -57,6 +57,33 @@ $ npm run test:e2e
 $ npm run test:cov
 ```
 
+## Health check
+
+`GET /health` checks whether the API can reach PostgreSQL by running a database
+health query. It returns `200 OK` when the database is connected:
+
+```json
+{
+  "status": "ok",
+  "service": "Ignis API",
+  "database": "connected",
+  "timestamp": "2026-11-19T13:00:00.000Z"
+}
+```
+
+If the database is unavailable, it returns `503 Service Unavailable`:
+
+```json
+{
+  "status": "error",
+  "service": "Ignis API",
+  "database": "disconnected",
+  "timestamp": "2026-11-19T13:00:00.000Z"
+}
+```
+
+In both responses, `timestamp` is the response time in ISO 8601 format.
+
 ## Study cycles
 
 A student has at most one unfinished cycle at a time (`POST /study-cycles/start`
