@@ -8,6 +8,7 @@ import {
 
 import { AchievementsService } from './achievements.service';
 import { AuthGuard } from '../auth/guards/auth.guard';
+import type { AuthenticatedRequest } from '../auth/authenticated-request';
 
 @Controller('achievements')
 export class AchievementsController {
@@ -17,7 +18,7 @@ export class AchievementsController {
 
   @Get()
   @UseGuards(AuthGuard)
-  async findAll(@Req() request: any) {
+  async findAll(@Req() request: AuthenticatedRequest) {
     return this.achievementsService.findAll(
       request.user.sub,
     );

@@ -13,6 +13,7 @@ import {
 
 import { StudyCyclesService } from './study-cycles.service';
 import { AuthGuard } from '../auth/guards/auth.guard';
+import type { AuthenticatedRequest } from '../auth/authenticated-request';
 import { StudyHistoryQueryDto } from './dto/study-history-query.dto';
 
 @Controller('study-cycles')
@@ -25,7 +26,7 @@ export class StudyCyclesController {
   @Post('start')
   @UseGuards(AuthGuard)
   async start(
-    @Req() request: any,
+    @Req() request: AuthenticatedRequest,
     @Body('durationMinutes') durationMinutes: number,
     @Body('title') title?: unknown,
   ) {
@@ -38,26 +39,26 @@ export class StudyCyclesController {
 
   @Get('active')
   @UseGuards(AuthGuard)
-  async active(@Req() request: any) {
+  async active(@Req() request: AuthenticatedRequest) {
     return this.studyCyclesService.active(request.user.sub);
   }
 
   @Post(':id/pause')
   @UseGuards(AuthGuard)
-  async pause(@Req() request: any, @Param('id', ParseIntPipe) id: number) {
+  async pause(@Req() request: AuthenticatedRequest, @Param('id', ParseIntPipe) id: number) {
     return this.studyCyclesService.pause(id, request.user.sub);
   }
 
   @Post(':id/resume')
   @UseGuards(AuthGuard)
-  async resume(@Req() request: any, @Param('id', ParseIntPipe) id: number) {
+  async resume(@Req() request: AuthenticatedRequest, @Param('id', ParseIntPipe) id: number) {
     return this.studyCyclesService.resume(id, request.user.sub);
   }
 
   @Patch(':id/title')
   @UseGuards(AuthGuard)
   async rename(
-    @Req() request: any,
+    @Req() request: AuthenticatedRequest,
     @Param('id', ParseIntPipe) id: number,
     @Body('title') title?: unknown,
   ) {
@@ -67,7 +68,7 @@ export class StudyCyclesController {
   @Post(':id/complete')
   @UseGuards(AuthGuard)
   async complete(
-    @Req() request: any,
+    @Req() request: AuthenticatedRequest,
     @Param('id', ParseIntPipe) id: number,
   ) {
     return this.studyCyclesService.complete(id, request.user.sub);
@@ -77,7 +78,7 @@ export class StudyCyclesController {
 @Get('history')
 @UseGuards(AuthGuard)
 async history(
-  @Req() request: any,
+  @Req() request: AuthenticatedRequest,
   @Query() query: StudyHistoryQueryDto,
 ) {
   return this.studyCyclesService.history(
@@ -89,7 +90,7 @@ async history(
 
 @Get('stats')
 @UseGuards(AuthGuard)
-async stats(@Req() request: any) {
+async stats(@Req() request: AuthenticatedRequest) {
   return this.studyCyclesService.stats(
     request.user.sub,
   );

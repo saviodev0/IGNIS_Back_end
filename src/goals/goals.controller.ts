@@ -13,6 +13,7 @@ import {
 import { CreateGoalDto } from './dto/create-goal.dto';
 import { GoalsService } from './goals.service';
 import { AuthGuard } from '../auth/guards/auth.guard';
+import type { AuthenticatedRequest } from '../auth/authenticated-request';
 
 @Controller('goals')
 export class GoalsController {
@@ -23,7 +24,7 @@ export class GoalsController {
   @Post()
   @UseGuards(AuthGuard)
   async create(
-    @Req() request: any,
+    @Req() request: AuthenticatedRequest,
     @Body() dto: CreateGoalDto,
   ) {
     return this.goalsService.create(
@@ -35,7 +36,7 @@ export class GoalsController {
 
   @Get()
   @UseGuards(AuthGuard)
-  async findAll(@Req() request: any) {
+  async findAll(@Req() request: AuthenticatedRequest) {
     return this.goalsService.findAll(
       request.user.sub,
     );
@@ -44,7 +45,7 @@ export class GoalsController {
   @Get(':id')
   @UseGuards(AuthGuard)
   async findOne(
-    @Req() request: any,
+    @Req() request: AuthenticatedRequest,
     @Param('id') id: string,
   ) {
     return this.goalsService.findOne(
@@ -56,7 +57,7 @@ export class GoalsController {
   @Delete(':id')
   @UseGuards(AuthGuard)
   async remove(
-    @Req() request: any,
+    @Req() request: AuthenticatedRequest,
     @Param('id') id: string,
   ) {
     return this.goalsService.remove(

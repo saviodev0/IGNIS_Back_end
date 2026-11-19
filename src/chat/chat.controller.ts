@@ -19,6 +19,7 @@ import { Throttle } from '@nestjs/throttler';
 import type { Response } from 'express';
 
 import { AuthGuard } from '../auth/guards/auth.guard';
+import type { AuthenticatedRequest } from '../auth/authenticated-request';
 import { ChatService } from './chat.service';
 import { MaterialService } from './material.service';
 import { CycleTitleService } from './cycle-title.service';
@@ -45,60 +46,60 @@ export class ChatController {
   ) {}
 
   @Get()
-  list(@Req() request: any) {
+  list(@Req() request: AuthenticatedRequest) {
     return this.chatService.list(request.user.sub);
   }
 
   @Post()
-  create(@Req() request: any, @Body() dto: CreateChatDto) {
+  create(@Req() request: AuthenticatedRequest, @Body() dto: CreateChatDto) {
     return this.chatService.create(request.user.sub, dto.title);
   }
 
   // Apaga TODOS os dados de IA do usuário logado (conversas, arquivos e materiais)
   @Throttle({ default: { limit: 3, ttl: 60_000 } })
   @Delete()
-  removeAll(@Req() request: any) {
+  removeAll(@Req() request: AuthenticatedRequest) {
     return this.privacyService.removeAllData(request.user.sub);
   }
 
   // Sugere o título de um ciclo de estudo a partir de uma conversa (a mais recente, se não informar)
   @Throttle({ default: { limit: 10, ttl: 60_000 } })
   @Post('cycle-title')
-  suggestCycleTitle(@Req() request: any, @Body() dto: SuggestCycleTitleDto) {
+  suggestCycleTitle(@Req() request: AuthenticatedRequest, @Body() dto: SuggestCycleTitleDto) {
     return this.cycleTitleService.suggest(request.user.sub, dto.chatId);
   }
 
   // Precisa vir antes de `:id`, senão "usage" seria lido como id de chat
   @Get('usage')
-  usage(@Req() request: any) {
+  usage(@Req() request: AuthenticatedRequest) {
     return this.usageService.today(request.user.sub);
   }
 
   // Também precisa vir antes de `:id`
   @Throttle({ default: { limit: 60, ttl: 60_000 } })
   @Get('search')
-  search(@Req() request: any, @Query() query: SearchChatsDto) {
+  search(@Req() request: AuthenticatedRequest, @Query() query: SearchChatsDto) {
     return this.chatService.search(request.user.sub, query.q);
   }
 
   @Get(':id')
-  get(@Req() request: any, @Param('id') id: string) {
+  get(@Req() request: AuthenticatedRequest, @Param('id') id: string) {
     return this.chatService.get(request.user.sub, id);
   }
 
   @Delete(':id')
-  remove(@Req() request: any, @Param('id') id: string) {
+  remove(@Req() request: AuthenticatedRequest, @Param('id') id: string) {
     return this.chatService.remove(request.user.sub, id);
   }
 
   @Patch(':id')
-  rename(@Req() request: any, @Param('id') id: string, @Body() dto: RenameChatDto) {
+  rename(@Req() request: AuthenticatedRequest, @Param('id') id: string, @Body() dto: RenameChatDto) {
     return this.chatService.rename(request.user.sub, id, dto.title);
   }
 
   @Patch(':id/study-time')
   addStudyTime(
-    @Req() request: any,
+    @Req() request: AuthenticatedRequest,
     @Param('id') id: string,
     @Body() dto: AddStudyTimeDto,
   ) {
@@ -109,7 +110,7 @@ export class ChatController {
   @Throttle({ default: { limit: 60, ttl: 60_000 } })
   @Patch(':id/messages/:messageId/feedback')
   setFeedback(
-    @Req() request: any,
+    @Req() request: AuthenticatedRequest,
     @Param('id') id: string,
     @Param('messageId') messageId: string,
     @Body() dto: SetFeedbackDto,
@@ -121,7 +122,7 @@ export class ChatController {
   @Post(':id/files')
   @UseInterceptors(FileInterceptor('file', { limits: { fileSize: 10 * 1024 * 1024 } }))
   addFile(
-    @Req() request: any,
+    @Req() request: AuthenticatedRequest,
     @Param('id') id: string,
     @UploadedFile() file?: Express.Multer.File,
   ) {
@@ -130,7 +131,7 @@ export class ChatController {
 
   @Get(':id/files/:fileId')
   async download(
-    @Req() request: any,
+    @Req() request: AuthenticatedRequest,
     @Param('id') id: string,
     @Param('fileId') fileId: string,
   ) {
@@ -145,24 +146,24 @@ export class ChatController {
   }
 
   @Delete(':id/files/:fileId')
-  removeFile(@Req() request: any, @Param('id') id: string, @Param('fileId') fileId: string) {
+  removeFile(@Req() request: AuthenticatedRequest, @Param('id') id: string, @Param('fileId') fileId: string) {
     return this.chatService.removeFile(request.user.sub, id, fileId);
   }
 
   @Throttle({ default: { limit: 5, ttl: 60_000 } })
   @Post(':id/material')
-  generateMaterial(@Req() request: any, @Param('id') id: string, @Body() dto: GenerateMaterialDto) {
+  generateMaterial(@Req() request: AuthenticatedRequest, @Param('id') id: string, @Body() dto: GenerateMaterialDto) {
     return this.materialService.generate(request.user.sub, id, dto);
   }
 
   @Get(':id/material')
-  listMaterial(@Req() request: any, @Param('id') id: string) {
+  listMaterial(@Req() request: AuthenticatedRequest, @Param('id') id: string) {
     return this.materialService.list(request.user.sub, id);
   }
 
   @Delete(':id/material/:materialId')
   removeMaterial(
-    @Req() request: any,
+    @Req() request: AuthenticatedRequest,
     @Param('id') id: string,
     @Param('materialId') materialId: string,
   ) {
@@ -176,7 +177,7 @@ export class ChatController {
   @Throttle({ default: { limit: 20, ttl: 60_000 } })
   @Post(':id/messages')
   async sendMessage(
-    @Req() request: any,
+    @Req() request: AuthenticatedRequest,
     @Param('id') id: string,
     @Body() dto: SendMessageDto,
     @Res() response: Response,
