@@ -5,6 +5,7 @@ import {
   Delete,
   Get,
   Param,
+  ParseIntPipe,
   Post,
   Req,
   UseGuards,
@@ -46,11 +47,11 @@ export class GoalsController {
   @UseGuards(AuthGuard)
   async findOne(
     @Req() request: AuthenticatedRequest,
-    @Param('id') id: string,
+    @Param('id', ParseIntPipe) id: number,
   ) {
     return this.goalsService.findOne(
       request.user.sub,
-      Number(id),
+      id,
     );
   }
 
@@ -58,11 +59,11 @@ export class GoalsController {
   @UseGuards(AuthGuard)
   async remove(
     @Req() request: AuthenticatedRequest,
-    @Param('id') id: string,
+    @Param('id', ParseIntPipe) id: number,
   ) {
     return this.goalsService.remove(
       request.user.sub,
-      Number(id),
+      id,
     );
   }
 }
