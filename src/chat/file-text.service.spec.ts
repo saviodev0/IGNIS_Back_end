@@ -25,6 +25,30 @@ const build = (ocr: Partial<{ isEnabled: boolean; recognizePdf: jest.Mock }> = {
 describe('FileTextService (PDF)', () => {
   beforeEach(() => getText.mockReset());
 
+  it('arquivo vazio recebe uma mensagem específica', async () => {
+    const { service } = build();
+    const emptyFile = {
+      originalname: 'vazio.pdf',
+      buffer: Buffer.alloc(0),
+    } as unknown as Express.Multer.File;
+
+    await expect(service.extract(emptyFile)).rejects.toThrow(
+      'O arquivo está vazio. Selecione um PDF ou DOCX com conteúdo.',
+    );
+  });
+
+  it('tipo inválido recebe uma mensagem específica', async () => {
+    const { service } = build();
+    const invalidFile = {
+      originalname: 'arquivo.txt',
+      buffer: Buffer.from('conteudo'),
+    } as unknown as Express.Multer.File;
+
+    await expect(service.extract(invalidFile)).rejects.toThrow(
+      'Tipo de arquivo inválido. Envie apenas arquivos PDF ou DOCX.',
+    );
+  });
+
   it('PDF com texto não usa OCR e não carrega os marcadores de página', async () => {
     getText.mockResolvedValue(withText);
     const { service, recognizePdf } = build();

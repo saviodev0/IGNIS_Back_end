@@ -29,6 +29,10 @@ export class FileTextService {
   constructor(private readonly ocr: OcrService) {}
 
   async extract(file: Express.Multer.File): Promise<ExtractedDocument> {
+    if (!file.buffer?.length) {
+      throw new BadRequestException('O arquivo está vazio. Selecione um PDF ou DOCX com conteúdo.');
+    }
+
     const name = file.originalname.toLowerCase();
     const buffer = file.buffer;
 
@@ -61,7 +65,7 @@ export class FileTextService {
         throw new BadRequestException('Não foi possível ler este documento.');
       }
     } else {
-      throw new BadRequestException('Envie apenas arquivos PDF ou DOCX.');
+      throw new BadRequestException('Tipo de arquivo inválido. Envie apenas arquivos PDF ou DOCX.');
     }
 
     text = clean(text);
