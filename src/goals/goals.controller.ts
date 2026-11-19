@@ -10,6 +10,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 
+import { CreateGoalDto } from './dto/create-goal.dto';
 import { GoalsService } from './goals.service';
 import { AuthGuard } from '../auth/guards/auth.guard';
 
@@ -23,13 +24,12 @@ export class GoalsController {
   @UseGuards(AuthGuard)
   async create(
     @Req() request: any,
-    @Body('type') type: string,
-    @Body('targetMinutes') targetMinutes: number,
+    @Body() dto: CreateGoalDto,
   ) {
     return this.goalsService.create(
       request.user.sub,
-      type,
-      targetMinutes,
+      dto.type,
+      dto.targetMinutes,
     );
   }
 
