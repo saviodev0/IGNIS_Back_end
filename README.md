@@ -57,6 +57,14 @@ $ npm run test:e2e
 $ npm run test:cov
 ```
 
+Nest's logs are silenced while testing (several tests fail on purpose: AI down, OCR crash,
+Mongo down). To see them: `TEST_LOGS=1 npm test`.
+
+Conventions: each spec sits next to the file it tests and shares its name (`chunker.ts` →
+`chunker.spec.ts`). Behaviors of `ChatService` are split by topic as
+`chat.service.<topic>.spec.ts` (`search`, `feedback`, `goal`, `replace-last`). `npm test`
+only runs the specs under `src/`; the HTTP smoke test in `test/` runs with `npm run test:e2e`.
+
 ## Health check
 
 `GET /health` checks whether the API can reach PostgreSQL by running a database
